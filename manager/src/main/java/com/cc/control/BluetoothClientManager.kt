@@ -63,6 +63,13 @@ object BluetoothClientManager {
     internal lateinit var app: Application
 
     /**
+     * 必须先初始化不然无法引用context
+     */
+    fun initDeviceManager(app: Application) {
+        this.app = app
+    }
+
+    /**
      * 蓝牙唯一操作对象
      */
     val client: BluetoothClient
