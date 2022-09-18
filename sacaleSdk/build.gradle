@@ -1,6 +1,0 @@
-configurations.maybeCreate("default")
-artifacts.add("default", file('device_manager.aar'))
-//官方推荐添加解决gradle4.0以上其他模块引入aar异常问题
-//dependencies {
-//    compileOnly files("device_manager.aar")
-//}
