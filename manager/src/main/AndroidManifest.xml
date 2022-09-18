@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.cc.control">
+
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <application>
+        <service
+            android:name="com.cc.control.DfuService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="no.nordicsemi.android.action.DFU_UPLOAD" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+
+    </application>
+
+</manifest>

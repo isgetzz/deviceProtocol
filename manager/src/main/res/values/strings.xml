@@ -1,0 +1,11 @@
+<resources>
+    <string name="string_d_dialog_disconnect_cancel">取消</string>
+    <string name="string_d_dialog_disconnect_affrim">确定</string>
+    <string name="string_d_dialog_disconnect"> 当前已连接『 %1s 』设备，是否断开连接?</string>
+    <string name="string_d_connect_fail"> 连接失败，请检查设备是否休眠或已被连接</string>
+    <string name="app_name">MERIT超燃脂</string>
+    <string name="btn_scan">AddDevice</string>
+    <string name="btn_remove">DeleteDevice</string>
+    <string name="btn_unit">Unit</string>
+    <string name="btn_cal">SetCal</string>
+</resources>
