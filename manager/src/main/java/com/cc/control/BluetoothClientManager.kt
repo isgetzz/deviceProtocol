@@ -22,7 +22,10 @@ import com.inuker.bluetooth.library.model.BleGattProfile
 import com.inuker.bluetooth.library.search.SearchRequest
 import com.inuker.bluetooth.library.search.SearchResult
 import com.inuker.bluetooth.library.search.response.SearchResponse
-import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.*
 
 /**
@@ -103,13 +106,7 @@ object BluetoothClientManager {
                     bleProfile = data
                     val array = data.getUUIdFromString("f8c0", "f8c4")
                     if (array.isNotEmpty()) {
-                        GlobalScope.launch(Dispatchers.IO) {
-                            runCatching {
-                                getZJDeviceInfo(address, array)
-                            }.onSuccess {
-                            }.onFailure {
-                            }
-                        }
+                        getZJDeviceInfo(address, array)
                     } else {
                         onConnectListener?.invoke(true, "", "")
                     }
@@ -323,7 +320,7 @@ object BluetoothClientManager {
      * @param mac       mac地址
      * @explain 延时10s没有读取返回false防止一直等待
      */
-    private suspend fun getZJDeviceInfo(mac: String, arrays: Array<UUID>): String {
+    private fun getZJDeviceInfo(mac: String, arrays: Array<UUID>) {
         var model = ""//modelId
         var f8c4 = "" //智健唯一标识符
         val job = GlobalScope.launch {
@@ -331,31 +328,24 @@ object BluetoothClientManager {
             onConnectListener?.invoke(false, "", "")
             cancel()
         }
-        withContext(Dispatchers.IO) {
-            client.read(mac,
-                string2UUID(DeviceConstants.D_EQUIPMENT_INFORMATION),
-                string2UUID(DeviceConstants.D_CHARACTER_2A24)) { _: Int, data: ByteArray ->
-                model = DeviceConvert.bytesToAsciiString(data)
-                if (f8c4.isNotEmpty() && model.isNotEmpty()) {
-                    job.cancel()
-                    onConnectListener?.invoke(true, f8c4, model)
-                    Log.d("onDeviceConnect3", "onDeviceConnect $model  $f8c4")
-                }
-                client.read(mac,
-                    arrays[0],
-                    arrays[1]) { _: Int, data: ByteArray ->
-                    f8c4 = DeviceConvert.bytesToAsciiString(data)
-                    if (f8c4.isNotEmpty() && model.isNotEmpty()) {
-                        job.cancel()
-                        onConnectListener?.invoke(true, f8c4, model)
-                        Log.d("onDeviceConnect4", "onDeviceConnect $model  $f8c4")
-                    }
-                }
+        client.read(mac,
+            string2UUID(DeviceConstants.D_EQUIPMENT_INFORMATION),
+            string2UUID(DeviceConstants.D_CHARACTER_2A24)) { _: Int, data: ByteArray ->
+            model = DeviceConvert.bytesToAsciiString(data)
+            if (f8c4.isNotEmpty() && model.isNotEmpty()) {
+                job.cancel()
+                onConnectListener?.invoke(true, f8c4, model)
             }
-            Log.d("onDeviceConnect5", "onDeviceConnect $model  $f8c4")
-            return@withContext "ADADAD"
         }
-        return "EQEQEQ"
+        client.read(mac,
+            arrays[0],
+            arrays[1]) { _: Int, data: ByteArray ->
+            f8c4 = DeviceConvert.bytesToAsciiString(data)
+            if (f8c4.isNotEmpty() && model.isNotEmpty()) {
+                job.cancel()
+                onConnectListener?.invoke(true, f8c4, model)
+            }
+        }
     }
 
     /**
