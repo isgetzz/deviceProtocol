@@ -228,6 +228,18 @@ object BluetoothClientManager {
     }
 
     /**
+     * 读取心率设备ota信息
+     */
+    fun getHeartOtaInfo(
+        eigenValue: Int,
+        deviceConnectBean: DeviceConnectBean,
+        otaUpdateListener: ((DeviceConnectBean) -> Unit)? = null,
+    ) {
+        onOtaUpdateListener = otaUpdateListener
+        readOtaVersion(deviceConnectBean, eigenValue)
+    }
+
+    /**
      *
      * 获取设备硬件跟软件版本
      */
