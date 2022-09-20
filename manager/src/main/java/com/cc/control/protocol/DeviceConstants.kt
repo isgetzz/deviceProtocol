@@ -20,6 +20,11 @@ object DeviceConstants {
     const val D_FAT_SCALE = "41"
     const val D_PHYLLISRODS = "27" //菲利斯棒
 
+    //心率状态
+    const val D_SPORT_PART_READY = 200
+    const val D_SPORT_PART_BASIC = 300
+    const val D_SPORT_PART_FINISH = 400
+
     //后台定义OTA类型
     const val D_OTA_TLW = 1
     const val D_OTA_BT = 2
@@ -65,6 +70,7 @@ object DeviceConstants {
     const val D_CHARACTER_2A24 = "00002a24-0000-1000-8000-00805f9b34fb" //DFU获取版本信息特征值 model
     const val D_CHARACTER_2A26 = "00002a26-0000-1000-8000-00805f9b34fb" //DFU获取版本信息特征值 Software
     const val D_CHARACTER_2A28 = "00002a28-0000-1000-8000-00805f9b34fb" //其他获取版本信息特征值 Software
+
     //XXY
     const val D_SERVICE_OTA_XXY = "0000ff00-0000-1000-8000-00805f9b34fb" //新向远
     const val D_CHARACTER_OTA_XXY = "0000ff01-0000-1000-8000-00805f9b34fb" //新向远

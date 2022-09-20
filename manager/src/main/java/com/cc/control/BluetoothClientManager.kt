@@ -415,8 +415,7 @@ object BluetoothClientManager {
      * @return true 连接
      */
     fun deviceConnectBean(deviceAddress: String): DeviceConnectBean {
-        val hashMap = deviceManagerMap.value
-        hashMap?.forEach {
+        deviceManagerMap.value?.forEach {
             if (it.value.address == deviceAddress) {
                 return it.value
             }
@@ -428,13 +427,21 @@ object BluetoothClientManager {
      *deviceType 设备类型
      */
     fun deviceConnectStatus(deviceType: String): DeviceConnectBean {
-        val hashMap = deviceManagerMap.value
-        hashMap?.forEach {
+        deviceManagerMap.value?.forEach {
             if (it.value.deviceType == deviceType) {
                 return it.value
             }
         }
         return DeviceConnectBean()
+    }
+
+    fun hasBindRateDevice(): Boolean {
+        deviceManagerMap.value?.forEach {
+            if (it.value.deviceType == DeviceConstants.D_HEART) {
+                return true
+            }
+        }
+        return false
     }
 
     /**
