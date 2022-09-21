@@ -34,6 +34,6 @@ dependencies {
     api 'com.inuker.bluetooth:library:1.4.0'
     compileOnly 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     compileOnly 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1'
-    compileOnly 'no.nordicsemi.android:dfu:1.10.3'//DFU升级库两个都要
-    compileOnly 'no.nordicsemi.android:ble-common:2.2.0'
+    implementation 'no.nordicsemi.android:dfu:1.10.3'//DFU升级库两个都要
+    implementation 'no.nordicsemi.android:ble-common:2.2.0'
 }
