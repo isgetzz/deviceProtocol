@@ -378,6 +378,7 @@ object BluetoothClientManager {
      */
     inline fun startSearch(
         crossinline searchBackResult: (BluetoothDevice?, Boolean) -> Unit,
+        equipNames: List<String>,
         deviceName: String? = null,
     ) {
         var toast = true
@@ -391,21 +392,33 @@ object BluetoothClientManager {
                     if (name.isNullOrEmpty()) {
                         return
                     }
-                    if (name.startsWith("HW401", true) || name.contains("HEART-B2",
-                            true) || name.contains("MERACH", true) ||
-                        name.startsWith("FS", true) || name.startsWith("TF", true) ||
-                        name.contains("CONSOLE", true) || name.contains("MRK", true) ||
-                        name.contains("HI-", true)
-                    ) {
-                        if (deviceName == null) {
-                            searchBackResult.invoke(device.device, true)
-                        } else if (device.name == deviceName) {
-                            toast = false
-                            client.stopSearch()
-                            searchBackResult.invoke(device.device, true)
+                    if (equipNames.isEmpty()) {
+                        if (name.startsWith("HW401", true) || name.contains("HEART-B2",
+                                true) || name.contains("MERACH", true) ||
+                            name.startsWith("FS", true) || name.startsWith("TF", true) ||
+                            name.contains("CONSOLE", true) || name.contains("MRK", true) ||
+                            name.contains("HI-", true)
+                        ) {
+                            if (deviceName == null) {
+                                searchBackResult.invoke(device.device, true)
+                            } else if (device.name == deviceName) {
+                                toast = false
+                                client.stopSearch()
+                                searchBackResult.invoke(device.device, true)
+                            }
                         }
-                        Log.d(TAG, "onDeviceFounded: ${device.rssi} ${device.device.name}")
+                    } else {
+                        if (equipNames.find { name.startsWith(it) } != null) {
+                            if (deviceName == null) {
+                                searchBackResult.invoke(device.device, true)
+                            } else if (device.name == deviceName) {
+                                toast = false
+                                client.stopSearch()
+                                searchBackResult.invoke(device.device, true)
+                            }
+                        }
                     }
+                    Log.d(TAG, "onDeviceFounded: ${device.rssi} ${device.device.name}")
                 }
 
                 override fun onSearchStopped() {
