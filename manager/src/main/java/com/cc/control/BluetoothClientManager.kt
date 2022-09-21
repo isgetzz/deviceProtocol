@@ -12,6 +12,8 @@ import com.cc.control.bean.DeviceConnectBean
 import com.cc.control.bean.DeviceConnectObserverBean
 import com.cc.control.ota.MtuGattCallback
 import com.cc.control.protocol.DeviceConstants
+import com.cc.control.protocol.DeviceConstants.D_CHARACTER_OTA_HEART
+import com.cc.control.protocol.DeviceConstants.D_SERVICE_OTA_HEART
 import com.cc.control.protocol.DeviceConvert
 import com.cc.control.protocol.getUUIdFromString
 import com.cc.control.protocol.string2UUID
@@ -236,6 +238,29 @@ object BluetoothClientManager {
     }
 
     /**
+     * 心率臂带进入ota指令（第四位为校验位，前三个数之和）
+     * @return
+     */
+    private fun otaModeByte(): ByteArray {
+        return byteArrayOf(-94, 4, 1, -89)
+    }
+
+    /**
+     *进入心率臂带ota模式
+     */
+    fun enterHeartOta(heartMac: String, enterOta: ((Boolean) -> Unit)) {
+        mClient!!.write(
+            heartMac,
+            UUID.fromString(D_SERVICE_OTA_HEART),
+            UUID.fromString(D_CHARACTER_OTA_HEART),
+            otaModeByte()
+        ) { otaCode ->
+            mClient!!.disconnect(heartMac)
+            enterOta.invoke(otaCode == 0)
+        }
+    }
+
+    /**
      *
      * 获取设备硬件跟软件版本
      */
@@ -366,7 +391,8 @@ object BluetoothClientManager {
                     if (name.isNullOrEmpty()) {
                         return
                     }
-                    if (name.contains("HEART-B2", true) || name.contains("MERACH", true) ||
+                    if (name.startsWith("HW401", true) || name.contains("HEART-B2",
+                            true) || name.contains("MERACH", true) ||
                         name.startsWith("FS", true) || name.startsWith("TF", true) ||
                         name.contains("CONSOLE", true) || name.contains("MRK", true) ||
                         name.contains("HI-", true)

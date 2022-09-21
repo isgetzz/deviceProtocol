@@ -92,6 +92,11 @@ object DeviceConstants {
     //LSW
     const val D_SERVICE_OTA_LSW = "00002600-0000-1000-8000-00805f9b34fb"
 
+    //DFU
+    //心率带写入数据（发送OTA指令）
+    const val D_SERVICE_OTA_HEART = "0000fd00-0000-1000-8000-00805f9b34fb"
+    const val D_CHARACTER_OTA_HEART = "0000fd0a-0000-1000-8000-00805f9b34fb"
+
     // 数据特征值
     const val D_CHARACTER_OTA_LSW = "00007001-0000-1000-8000-00805f9b34fb"
 

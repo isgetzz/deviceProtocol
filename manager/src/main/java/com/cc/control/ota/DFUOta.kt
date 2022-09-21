@@ -39,6 +39,7 @@ class DFUOta : BaseDeviceOta() {
             }
         }
     }
+
     override fun onFile(fileName: String) {
         mActivity?.run {
             DfuServiceListenerHelper.registerProgressListener(this, dfuProgressListener)
@@ -58,7 +59,7 @@ class DFUOta : BaseDeviceOta() {
                             ) return
                             val starter: DfuServiceInitiator =
                                 DfuServiceInitiator(deviceConnectBean.address)
-                                    .setDeviceName("")
+                                    .setDeviceName(deviceConnectBean.deviceName)
                                     .setKeepBond(false)
                                     .setForeground(false)
                                     .setForceDfu(false)
