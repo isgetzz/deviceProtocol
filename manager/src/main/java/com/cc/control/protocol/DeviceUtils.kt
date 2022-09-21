@@ -113,8 +113,11 @@ fun getDeviceOtaFunction(otaType: Int): BaseDeviceOta {
         DeviceConstants.D_OTA_XXY -> {
             XXYOta()
         }
-        else -> {
+        DeviceConstants.D_OTA_DFU->{
             DFUOta()
+        }
+        else -> {
+            OtherOta()
         }
     }
 }
