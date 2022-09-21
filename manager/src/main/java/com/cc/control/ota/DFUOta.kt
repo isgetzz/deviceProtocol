@@ -41,9 +41,11 @@ class DFUOta : BaseDeviceOta() {
     }
 
     override fun onFile(filePath: String) {
+        if (dfuUri == null)
+            return
         mActivity?.run {
             DfuServiceListenerHelper.registerProgressListener(this, dfuProgressListener)
-            loaderManager.restartLoader(SELECT_FILE_REQ, bundleOf(EXTRA_URI to Uri.parse(filePath)),
+            loaderManager.restartLoader(SELECT_FILE_REQ, bundleOf(EXTRA_URI to dfuUri),
                 object : LoaderManager.LoaderCallbacks<Cursor?> {
                     override fun onCreateLoader(id: Int, args: Bundle): Loader<Cursor?> {
                         val uri = args.getParcelable<Uri>(EXTRA_URI)
@@ -52,9 +54,9 @@ class DFUOta : BaseDeviceOta() {
 
                     override fun onLoadFinished(loader: Loader<Cursor?>, data: Cursor?) {
                         if (data != null && data.moveToNext()) {
-                            var filePath: String? = null
+                            var path: String? = null
                             val dataIndex = data.getColumnIndex(MediaStore.MediaColumns.DATA)
-                            if (dataIndex != -1) filePath = data.getString(dataIndex /* 2 DATA */)
+                            if (dataIndex != -1) path = data.getString(dataIndex /* 2 DATA */)
                             if (isServiceRunning(DfuService::class.java, this@run)
                             ) return
                             val starter: DfuServiceInitiator =
@@ -67,7 +69,7 @@ class DFUOta : BaseDeviceOta() {
                                     .setPacketsReceiptNotificationsValue(DfuServiceInitiator.DEFAULT_PRN_VALUE)
                                     .setPrepareDataObjectDelay(400)
                                     .setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)
-                            starter.setZip(Uri.parse(filePath), filePath)
+                            starter.setZip(dfuUri, path)
                             starter.start(this@run, DfuService::class.java)
                         }
                     }
