@@ -96,7 +96,7 @@ fun getDeviceFunction(deviceType: String): BaseDeviceFunction {
 /**
  * ota类型
  */
-fun getDeviceOtaFunction(otaType: Int): BaseDeviceOta? {
+fun getDeviceOtaFunction(otaType: Int): BaseDeviceOta {
     return when (otaType) {
         DeviceConstants.D_OTA_TLW -> {
             TLWOta()

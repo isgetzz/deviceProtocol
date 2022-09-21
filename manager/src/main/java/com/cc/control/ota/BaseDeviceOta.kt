@@ -60,7 +60,6 @@ abstract class BaseDeviceOta : LifecycleObserver {
      * DFU
      */
     protected var mActivity: Activity? = null
-    protected var fileUri: Uri? = null
 
     /**
      * 创建对象
@@ -68,10 +67,8 @@ abstract class BaseDeviceOta : LifecycleObserver {
     open fun create(
         connectBean: DeviceConnectBean,
         activity: Activity? = null,
-        uri: Uri? = null,
         otaListener: ((Int, Int) -> Unit)? = null,
     ) {
-        fileUri = uri
         mActivity = activity
         deviceOtaListener = otaListener
         deviceConnectBean = connectBean
