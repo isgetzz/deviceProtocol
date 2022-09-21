@@ -24,11 +24,11 @@ class BTOta : BaseDeviceOta() {
     private var writeTotalSize = 0//总包长
     private var writePosition = 0 //当前包index
 
-    override fun onFile(fileName: String) {
-        if (!fileName.isFileExist()) {
+    override fun onFile(filePath: String) {
+        if (!filePath.isFileExist()) {
             return
         }
-        fileName.readFileToByteArray().dvSplitByteArrEndSeamProtection(writeLength).run {
+        filePath.readFileToByteArray().dvSplitByteArrEndSeamProtection(writeLength).run {
             writeByteArrayList = this
             writeTotalSize = size
             deviceConnectBean.run {

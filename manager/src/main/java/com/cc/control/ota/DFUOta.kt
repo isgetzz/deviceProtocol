@@ -40,10 +40,10 @@ class DFUOta : BaseDeviceOta() {
         }
     }
 
-    override fun onFile(fileUri: String) {
+    override fun onFile(filePath: String) {
         mActivity?.run {
             DfuServiceListenerHelper.registerProgressListener(this, dfuProgressListener)
-            loaderManager.restartLoader(SELECT_FILE_REQ, bundleOf(EXTRA_URI to Uri.parse(fileUri)),
+            loaderManager.restartLoader(SELECT_FILE_REQ, bundleOf(EXTRA_URI to Uri.parse(filePath)),
                 object : LoaderManager.LoaderCallbacks<Cursor?> {
                     override fun onCreateLoader(id: Int, args: Bundle): Loader<Cursor?> {
                         val uri = args.getParcelable<Uri>(EXTRA_URI)
@@ -67,7 +67,7 @@ class DFUOta : BaseDeviceOta() {
                                     .setPacketsReceiptNotificationsValue(DfuServiceInitiator.DEFAULT_PRN_VALUE)
                                     .setPrepareDataObjectDelay(400)
                                     .setUnsafeExperimentalButtonlessServiceInSecureDfuEnabled(true)
-                            starter.setZip(Uri.parse(fileUri), filePath)
+                            starter.setZip(Uri.parse(filePath), filePath)
                             starter.start(this@run, DfuService::class.java)
                         }
                     }

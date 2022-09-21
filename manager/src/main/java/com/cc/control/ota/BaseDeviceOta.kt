@@ -42,7 +42,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
     /**
      * fileName 文件路径
      */
-    abstract fun onFile(fileName: String)
+    abstract fun onFile(filePath: String)
 
     protected var job: Job? = null
 

@@ -38,11 +38,11 @@ class LSWOta : BaseDeviceOta() {
         const val D_OTA_SUCCESS_LSW = "05"//当前总包数 cmd
     }
 
-    override fun onFile(fileName: String) {
-        if (!fileName.isFileExist()) {
+    override fun onFile(filePath: String) {
+        if (!filePath.isFileExist()) {
             return
         }
-        fileName.readFileToByteArray().run {
+        filePath.readFileToByteArray().run {
             val sha32 = getSHA256()
             //源文件用sha256获得32字节、这里需要分成两包
             totalLength = ceil((size * 1.0 / writeLength)).toInt()

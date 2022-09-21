@@ -32,13 +32,13 @@ class FRKOta : BaseDeviceOta() {
     private var fileName = ""
     private var fileTotalSize = 0
 
-    override fun onFile(fileName: String) {
+    override fun onFile(filePath: String) {
         write(stringToBytes("010000"))
         val fileByte = fileName.readFileToByteArray()
         fileTotalSize = fileByte.size
         //擦除长度 4kb每次
         dataClearTotalSize = (fileTotalSize / 1024 / 4).toLong()
-        this.fileName = fileName
+        fileName = filePath
         fileByte.dvSplitByteArr(dataWriteLength).run {
             writeByteArrayList = this
             dataWriteTotalSize = this.size

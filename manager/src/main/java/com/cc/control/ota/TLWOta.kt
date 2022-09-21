@@ -29,11 +29,11 @@ class TLWOta : BaseDeviceOta() {
         const val D_OTA_START_TLW = "01ff"
     }
 
-    override fun onFile(fileName: String) {
-        if (!fileName.isFileExist()) {
+    override fun onFile(filePath: String) {
+        if (!filePath.isFileExist()) {
             return
         }
-        fileName.readFileToByteArray().dvSplitByteArr(writeLength).run {
+        filePath.readFileToByteArray().dvSplitByteArr(writeLength).run {
             writeByteArrayList = this
             writeTotalSize = this.size
             write(onStartTeLink(), onSuccess = {

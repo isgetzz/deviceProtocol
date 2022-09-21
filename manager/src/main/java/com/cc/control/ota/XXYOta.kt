@@ -24,11 +24,11 @@ class XXYOta : BaseDeviceOta() {
     private var writeLength = 256 //每个扇区
     private var endWrite: ByteArray? = null
 
-    override fun onFile(fileName: String) {
-        if (!fileName.isFileExist()) {
+    override fun onFile(filePath: String) {
+        if (!filePath.isFileExist()) {
             return
         }
-        val fileByte = fileName.readFileToByteArray()
+        val fileByte = filePath.readFileToByteArray()
         endWrite = ByteUtils.stringToBytes(bytesToHexSum(fileByte))
         fileByte.dvSplitByteArrEndSeamProtection(writeLength).run {
             writeByteArrayList = this
