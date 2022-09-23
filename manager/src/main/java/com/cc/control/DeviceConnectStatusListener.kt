@@ -16,6 +16,7 @@ class DeviceConnectStatusListener : BleConnectStatusListener() {
             //断开的设备解绑订阅，防止连接设备失败还会走回调
             BluetoothClientManager.client.unregisterConnectStatusListener(mac, this)
             val connectBean = BluetoothClientManager.deviceConnectBean(mac)
+            connectBean.isDeviceConnect = false
             BluetoothClientManager.deviceConnectObserverBean.postValue(deviceConnectObserverBean.apply {
                 deviceAddress = mac
                 deviceConnectStatus = false
@@ -24,11 +25,6 @@ class DeviceConnectStatusListener : BleConnectStatusListener() {
             })
             logD("BluetoothClientManager0",
                 "${connectBean.deviceType} ${connectBean.deviceName} $mac $status")
-            BluetoothClientManager.deviceManagerMap.value?.forEach { it ->
-                if (it.value.address == mac) {
-                    it.value.isDeviceConnect = false
-                }
-            }
         }
     }
 }
