@@ -57,8 +57,7 @@ class DFUOta : BaseDeviceOta() {
                             var path: String? = null
                             val dataIndex = data.getColumnIndex(MediaStore.MediaColumns.DATA)
                             if (dataIndex != -1) path = data.getString(dataIndex /* 2 DATA */)
-                            if (isServiceRunning(DfuService::class.java, this@run)
-                            ) return
+                            if (isServiceRunning(DfuService::class.java, this@run)) return
                             val starter: DfuServiceInitiator =
                                 DfuServiceInitiator(deviceConnectBean.address)
                                     .setDeviceName(deviceConnectBean.deviceName)

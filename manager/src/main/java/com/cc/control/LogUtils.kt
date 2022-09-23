@@ -11,25 +11,25 @@ import java.util.*
  * 测试或者手动开启
  */
 fun logD(tag: String, content: String, showLog: Boolean = false) {
-    if (BuildConfig.DEBUG || showLog) {
+    if (showLog) {
         Log.d(tag, content)
     }
 }
 
 fun logE(tag: String, content: String, showLog: Boolean = false) {
-    if (BuildConfig.DEBUG || showLog) {
+    if (showLog) {
         Log.e(tag, content)
     }
 }
 
 fun logV(tag: String, content: String, showLog: Boolean = false) {
-    if (BuildConfig.DEBUG || showLog) {
+    if (showLog) {
         Log.v(tag, content)
     }
 }
 
 fun logI(tag: String, content: String, showLog: Boolean = false) {
-    if (BuildConfig.DEBUG || showLog) {
+    if (showLog) {
         Log.i(tag, content)
     }
 }
@@ -64,6 +64,7 @@ fun writeToFile(tag: String, msg: String) {
         }
     }
 }
+
 /**
  * 获得文件存储路径
  *
