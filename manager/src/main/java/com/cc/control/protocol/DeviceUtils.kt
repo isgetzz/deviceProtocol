@@ -7,6 +7,11 @@ import android.text.TextUtils
 import com.cc.control.*
 import com.cc.control.ota.*
 import com.inuker.bluetooth.library.model.BleGattProfile
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -27,7 +32,6 @@ fun String.readFileToByteArray(): ByteArray {
         fis.close()
     } catch (e: IOException) {
         e.printStackTrace()
-        logD("readFileToByteArray", e.toString())
     }
     return bytes
 }
@@ -113,7 +117,7 @@ fun getDeviceOtaFunction(otaType: Int): BaseDeviceOta {
         DeviceConstants.D_OTA_XXY -> {
             XXYOta()
         }
-        DeviceConstants.D_OTA_DFU->{
+        DeviceConstants.D_OTA_DFU -> {
             DFUOta()
         }
         else -> {
@@ -136,4 +140,40 @@ fun isServiceRunning(cls: Class<*>, activity: Activity): Boolean {
     }
     return false
 }
+
+/**
+ * 协程 flow 倒计时
+ *@param scope 协程
+ *@param totalTime 总时间
+ *@param countDownTime 执行间隔时间
+ *@param onTick 每次执行回调
+ *@param onFinish 倒计时结束
+ */
+fun countDownCoroutines(
+    scope: CoroutineScope,
+    totalTime: Long = Long.MAX_VALUE,
+    countDownTime: Long = 1000,
+    onTick: (Long) -> Unit,
+    onFinish: (() -> Unit)? = null,
+): Job {
+    var timer = 0L
+    return flow {
+        for (num in totalTime downTo 0) {
+            emit(num)
+            delay(countDownTime)
+        }
+    }.flowOn(Dispatchers.Default)
+        .onEach {
+            timer++
+            onTick.invoke(it)
+        }
+        .onCompletion {
+            if (timer == totalTime) {
+                onFinish?.invoke()
+            }
+        }
+        .flowOn(Dispatchers.Main)
+        .launchIn(scope) //保证在一个协程中执行
+}
+
 

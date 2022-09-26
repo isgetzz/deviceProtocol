@@ -1,7 +1,7 @@
 package com.cc.control.ota
 
-import android.app.Activity
 import android.net.Uri
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
@@ -59,7 +59,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
     /**
      * DFU
      */
-    protected var mActivity: Activity? = null
+    protected var mActivity: AppCompatActivity? = null
     protected var dfuUri: Uri? = null
 
     /**
@@ -67,7 +67,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
      */
     open fun create(
         connectBean: DeviceConnectBean,
-        activity: Activity? = null,
+        activity: AppCompatActivity? = null,
         uri: Uri? = null,
         otaListener: ((Int, Int) -> Unit)? = null,
     ) {

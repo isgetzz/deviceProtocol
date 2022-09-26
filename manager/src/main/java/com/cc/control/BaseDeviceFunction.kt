@@ -3,18 +3,19 @@ package com.cc.control
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
+import com.cc.control.bean.DeviceConnectBean
+import com.cc.control.bean.DeviceNotifyBean
+import com.cc.control.bean.DeviceTrainBean
+import com.cc.control.protocol.*
 import com.inuker.bluetooth.library.Constants
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.connect.response.BleNotifyResponse
 import com.inuker.bluetooth.library.utils.ByteUtils
-import com.cc.control.bean.DeviceConnectBean
-import com.cc.control.bean.DeviceTrainBean
-import com.cc.control.protocol.*
 import kotlinx.coroutines.*
 import java.util.*
 
 /**
- * @Author : cc
+ * author : cc
  * desc    : 设备数据类
  * time    : 2022/2/15
  */
@@ -196,6 +197,9 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                     serviceUUId,
                     string2UUID(DeviceConstants.D_SERVICE1826_2ADA), mNotifyRsp)
             }
+            BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(true,
+                deviceType,
+                address))
             logI(TAG, "notifyRegister $serviceUUId $characterNotify $address")
         }
     }
@@ -306,6 +310,9 @@ abstract class BaseDeviceFunction : LifecycleObserver {
             BluetoothClientManager.client.unnotify(deviceDateBean.address,
                 deviceDateBean.serviceUUId,
                 deviceDateBean.characterNotify) {}
+            BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(false,
+                deviceDateBean.deviceType,
+                deviceDateBean.address))
         }
         refreshData = false
         deviceDataListener = null

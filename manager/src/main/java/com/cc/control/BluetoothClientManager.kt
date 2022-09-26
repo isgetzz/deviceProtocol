@@ -6,10 +6,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
-import com.cc.control.bean.DeviceAddBean
-import com.cc.control.bean.DeviceAliasBean
-import com.cc.control.bean.DeviceConnectBean
-import com.cc.control.bean.DeviceConnectObserverBean
+import com.cc.control.bean.*
 import com.cc.control.ota.MtuGattCallback
 import com.cc.control.protocol.DeviceConstants
 import com.cc.control.protocol.DeviceConstants.D_CHARACTER_OTA_HEART
@@ -47,6 +44,11 @@ object BluetoothClientManager {
      * ota 信息回调
      */
     private var onOtaUpdateListener: ((DeviceConnectBean) -> Unit)? = null
+
+    /**
+     * 设备数据订阅监听
+     */
+    var deviceNotify = MutableLiveData<DeviceNotifyBean>()
 
     // 蓝牙状态监听
     private var mBleConnectStatusListener: DeviceConnectStatusListener =
