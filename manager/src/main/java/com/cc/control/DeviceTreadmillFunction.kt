@@ -1,7 +1,7 @@
 package com.cc.control
 
-import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.cc.control.protocol.*
+import com.inuker.bluetooth.library.beacon.BeaconParser
 import java.util.*
 
 /**
@@ -70,28 +70,31 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
     ) {
         if (len == 0x51) {
             deviceNotifyBean.run {
-                //跑步机暂停并处于减速完成
-                if (deviceStatus == DEVICE_TREADMILL_PAUSE && status != deviceStatus) {
-                    deviceStatusListener?.onDevicePause()
-                }
-                //停机
-                if ((deviceStatus == DEVICE_TREADMILL_AWAIT || deviceStatus == DEVICE_TREADMILL_STOP || deviceStatus == DEVICE_TREADMILL_DISABLE) && deviceStatus != status) {
-                    //因为刚连跑步机状态可能是待机、停机
-                    //获取过数据并且，不是重连
-                    deviceStatusListener?.onDeviceFinish()
-                }
-                //倒计时
-                if (deviceStatus == DEVICE_TREADMILL_LAUNCHING) {
-                    beaconParser.setPosition(3)
-                    deviceStatusListener?.onDeviceCountTime(beaconParser.readByte())
-                }
-                //减速中
-                if (deviceStatus == DEVICE_TREADMILL_COUNTDOWN && deviceStatus != status) {
-                    deviceStatusListener?.onDeviceSpeedCut()
-                }
-                //启动把状态改为运行中
-                if (deviceStatus == DEVICE_TREADMILL_RUNNING && deviceStatus != status) {
-                    deviceStatusListener?.onDeviceRunning()
+                when (deviceStatus) {
+                    DEVICE_TREADMILL_PAUSE -> { //跑步机暂停并处于减速完成
+                        if (status != deviceStatus) {
+                            deviceStatusListener?.onDevicePause()
+                        }
+                    }
+                    DEVICE_TREADMILL_AWAIT, DEVICE_TREADMILL_STOP, DEVICE_TREADMILL_DISABLE, DEVICE_TREADMILL_MALFUNCTION ->
+                        //因为刚连跑步机状态可能是待机、停机
+                        //获取过数据并且，不是重连
+                        if (deviceStatus != status) {
+                            deviceStatusListener?.onDeviceFinish()
+                        }
+                    DEVICE_TREADMILL_LAUNCHING -> {//倒计时
+                        beaconParser.setPosition(3)
+                        deviceStatusListener?.onDeviceCountTime(beaconParser.readByte())
+                    }
+                    DEVICE_TREADMILL_COUNTDOWN -> { //减速中
+                        if (deviceStatus != status)
+                            deviceStatusListener?.onDeviceSpeedCut()
+                    }
+                    DEVICE_TREADMILL_RUNNING -> {//启动把状态改为运行中
+                        if (deviceStatus != status)
+                            deviceStatusListener?.onDeviceRunning()
+
+                    }
                 }
                 status = deviceStatus
                 //运行中并且长度符合防止脏数据

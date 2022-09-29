@@ -1,7 +1,7 @@
 package com.cc.control.protocol
 
-import com.inuker.bluetooth.library.utils.ByteUtils
 import com.cc.control.protocol.DeviceConvert.intArrToHexString
+import com.inuker.bluetooth.library.utils.ByteUtils
 
 /**
  * @Author      : cc
@@ -22,6 +22,7 @@ const val DEVICE_TREADMILL_AWAIT = 0x00 //待机
 const val DEVICE_TREADMILL_LAUNCHING = 0x02 //启动中
 const val DEVICE_TREADMILL_COUNTDOWN = 0x04 //减速中
 const val DEVICE_TREADMILL_STOP = 0x01//停机
+const val DEVICE_TREADMILL_MALFUNCTION = 0x05//故障，部分跑步机安全锁脱落返回
 const val DEVICE_TREADMILL_DISABLE = 0x06//禁用 1，安全锁触发； 2，设备睡眠
 const val DEVICE_TREADMILL_LENGTH = 17  //数据长度
 
