@@ -68,12 +68,14 @@ object BluetoothClientManager {
 
     //app 实例化
     internal lateinit var app: Application
+    var isShowLog = false//是否打印日志
 
     /**
      * 必须先初始化不然无法引用context
      */
-    fun initDeviceManager(app: Application) {
+    fun initDeviceManager(app: Application, showLog: Boolean = false) {
         this.app = app
+        isShowLog = showLog
     }
 
     /**

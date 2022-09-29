@@ -3,6 +3,7 @@ package com.cc.control
 import android.content.Context
 import android.os.Environment
 import android.util.Log
+import com.cc.control.BluetoothClientManager.isShowLog
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -11,25 +12,25 @@ import java.util.*
  * 测试或者手动开启
  */
 fun logD(tag: String, content: String, showLog: Boolean = false) {
-    if (showLog) {
+    if (showLog || isShowLog) {
         Log.d(tag, content)
     }
 }
 
 fun logE(tag: String, content: String, showLog: Boolean = false) {
-    if (showLog) {
+    if (showLog || isShowLog) {
         Log.e(tag, content)
     }
 }
 
 fun logV(tag: String, content: String, showLog: Boolean = false) {
-    if (showLog) {
+    if (showLog || isShowLog) {
         Log.v(tag, content)
     }
 }
 
 fun logI(tag: String, content: String, showLog: Boolean = false) {
-    if (showLog) {
+    if (showLog || isShowLog) {
         Log.i(tag, content)
     }
 }
