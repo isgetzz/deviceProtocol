@@ -1,8 +1,10 @@
 package com.cc.control.bean
 
-import com.inuker.bluetooth.library.model.BleGattProfile
+import android.os.Parcelable
 import com.cc.control.protocol.DeviceConstants
+import com.inuker.bluetooth.library.model.BleGattProfile
 import java.util.*
+import kotlinx.parcelize.Parcelize as Par
 
 /**
  * @Author      : cc
@@ -11,6 +13,7 @@ import java.util.*
  * 正常ota writeNoRes部分特征值需要用write不然无法写入成功。
  * 连接的时候可根据蓝牙返回的状态判断 如:getCharacters().get(0).getProperty()
  */
+@Par
 class DeviceConnectBean(
     var address: String = "",
     var isDeviceConnect: Boolean = false,//绑定状态 true 连接
@@ -33,7 +36,7 @@ class DeviceConnectBean(
     var deviceOtaType: Int = 0, //1:泰凌威 智建设备；2:博通; 3:DFU 4:新向远 5富芮坤 6 凌思威
     var modelNumber: String = "",//ota modelId
     var modelRevision: String = "",//ota version
-) {
+) : Parcelable {
     constructor(
         deviceType: String = "",
         address: String = "",
