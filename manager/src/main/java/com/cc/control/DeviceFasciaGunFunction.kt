@@ -35,6 +35,7 @@ class DeviceFasciaGunFunction: BaseDeviceFunction() {
         resistance: Int,
         slope: Int,
     ) {
+        writeToFile("onDeviceControl 筋膜枪", "speed: $speed resistance: $resistance slope $slope")
         write(onWriteFasciaGunControl(resistance))
     }
 

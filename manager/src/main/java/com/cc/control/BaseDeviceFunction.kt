@@ -82,7 +82,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
      * 例如：当前暂停那么就会发送继续指令，当前运行就会发送暂停
      */
     open fun onDeviceTreadmillControl(isPause: Boolean = false) {
-
+        writeToFile("onDeviceTreadmillControl", "$isPause")
     }
 
     /**

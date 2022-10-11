@@ -1,12 +1,12 @@
 package com.cc.control
 
-import com.inuker.bluetooth.library.beacon.BeaconParser
-import com.inuker.bluetooth.library.utils.ByteUtils
 import com.cc.control.protocol.*
 import com.cc.control.protocol.DeviceConstants.D_SERVICE1826
 import com.cc.control.protocol.DeviceConstants.D_SERVICE_BQ
 import com.cc.control.protocol.DeviceConstants.D_SERVICE_FFFO
 import com.cc.control.protocol.DeviceConstants.D_SERVICE_MRK
+import com.inuker.bluetooth.library.beacon.BeaconParser
+import com.inuker.bluetooth.library.utils.ByteUtils
 import java.util.*
 import kotlin.experimental.and
 
@@ -46,6 +46,9 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
         resistance: Int,
         slope: Int,
     ) {
+        writeToFile("onDeviceControl 单车",
+            "${deviceDateBean.deviceType} speed: $speed resistance: $resistance slope $slope")
+
         write(when (deviceDateBean.deviceProtocol) {
             DeviceConstants.D_SERVICE_TYPE_BQ -> {
                 if (deviceDateBean.deviceType == DeviceConstants.D_ROW) {

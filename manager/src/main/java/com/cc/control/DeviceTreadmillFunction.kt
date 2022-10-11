@@ -53,6 +53,7 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
         onWriteStart {
             write(onWriteTreadmillControl(speed, slope))
         }
+        writeToFile("onDeviceControl 跑步机", "speed: $speed resistance: $resistance slope $slope")
     }
 
     override fun onDeviceTreadmillControl(isPause: Boolean) {
@@ -80,6 +81,7 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
                         //因为刚连跑步机状态可能是待机、停机
                         //获取过数据并且，不是重连
                         if (deviceStatus != status) {
+                            writeToFile("onDeviceFinish 跑步机状态", "$deviceStatus")
                             deviceStatusListener?.onDeviceFinish()
                         }
                     DEVICE_TREADMILL_LAUNCHING -> {//倒计时
