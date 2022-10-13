@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
 import android.text.TextUtils
+import android.util.Log
 import com.cc.control.*
 import com.cc.control.ota.*
 import com.inuker.bluetooth.library.model.BleGattProfile
@@ -162,7 +163,8 @@ fun countDownCoroutines(
             emit(num)
             delay(countDownTime)
         }
-    }.flowOn(Dispatchers.Default)
+    }
+        .flowOn(Dispatchers.Default)
         .onEach {
             timer++
             onTick.invoke(it)
@@ -174,6 +176,40 @@ fun countDownCoroutines(
         }
         .flowOn(Dispatchers.Main)
         .launchIn(scope) //保证在一个协程中执行
+}
+
+fun testFlow(deviceName: String, lifecycleScope: CoroutineScope) {
+    //    runCatching { }.onSuccess { }.onFailure { }
+    flow {
+        //Network.instance.get("/equip/equipment/"
+        emit("数据请求")
+    }
+        .flowOn(Dispatchers.Default)
+//        .zip(flowOf("1111")) {a,b->
+//           // 多个请求执行完成在调用 collect
+//        }
+        .map {
+            //用于顺序完成多个请求
+            //   "$it\n============\n" + Network.instance.get("/equip/equipment/)
+            "第一个请求成功，继续请求下一个"
+        }
+        .onEach {
+            //onCompletion 执行之后调用
+            Log.d("testFlow1", "onEach: $it")
+        }
+        .onCompletion {
+            //请求完成
+            Log.d("testFlow1", "onCompletion: $this")
+        }
+//        .retryWhen { cause, attempt ->
+//           //请求失败重试
+//            cause !is NullPointerException && attempt <= 2
+//        }
+        .catch { e ->
+            //异常处理，放在后面捕获上游所有异常
+            Log.d("testFlow1", "catch: $this ${e.message}")
+        }
+        .launchIn(lifecycleScope)//指定协程，类似suspend 挂起调用 collect
 }
 
 
