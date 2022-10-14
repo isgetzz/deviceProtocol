@@ -214,11 +214,11 @@ object BluetoothClientManager {
                                 if (it.property and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE > 0
                                     || it.property and BluetoothGattCharacteristic.PROPERTY_WRITE > 0
                                 ) {
-                                    characterWrite = uuid
+                                    characterWrite = it.uuid
                                 } else if (it.property and BluetoothGattCharacteristic.PROPERTY_NOTIFY > 0 ||
                                     it.property and BluetoothGattCharacteristic.PROPERTY_INDICATE > 0
                                 ) {
-                                    characterNotify = uuid
+                                    characterNotify = it.uuid
                                 }
                             }
                         }
