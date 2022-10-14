@@ -211,5 +211,25 @@ fun testFlow(deviceName: String, lifecycleScope: CoroutineScope) {
         }
         .launchIn(lifecycleScope)//指定协程，类似suspend 挂起调用 collect
 }
+//网络请求
+fun httpsTest() {
+    flow {
+        emit("")//block()// crossinline block: suspend CoroutineScope.() -> String,
+    }
+        .catch {
+            Log.d("BaseViewModel", "catch:${it.message} ")
+        }
+    //  .collect {
+    //try{}catch(){e:Exception}
+//            val type: Type = object : TypeReference<ApiResponse<T>>() {}.type
+//            val bean = JSON.parseObject(it, type) as ApiResponse<T>
+//            if (bean.status == 200) {
+//                testSuccess.invoke(bean.data)
+//                //     resultData?.postValue(tClass)
+//                Log.d("BaseViewModel",
+//                    "request: ${bean.message} == ${bean.status}== ${bean.data}")
+    //   }
+
+}
 
 
