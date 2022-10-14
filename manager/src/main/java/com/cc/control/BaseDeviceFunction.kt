@@ -270,7 +270,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                             if (deviceName.contains("MERACH-MR667", true) ||
                                 deviceName.contains("MERACH MR-667", true)
                             ) {
-                                BluetoothClientManager.disConnect(address)
+                               BluetoothClientManager.disConnect(address)
                             }
                             onSuccess?.invoke()
                         }
@@ -278,6 +278,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                 } else {
                     write(onDestroyWrite(), onSuccess)
                 }
+                writeToFile("onDeviceClear", "$canClear $deviceType $deviceName")
             }
         }
     }

@@ -64,6 +64,7 @@ fun writeToFile(tag: String, msg: String) {
             e.printStackTrace()
         }
     }
+    logD("writeToFile: $tag", msg)
 }
 
 /**
