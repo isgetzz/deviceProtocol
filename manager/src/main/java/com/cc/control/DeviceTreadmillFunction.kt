@@ -61,6 +61,7 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
         onWriteStart {
             write(if (isPause) onWriteTreadmillStop() else onWriteTreadmillStart())
         }
+        writeToFile("onDeviceTreadmillControl 跑步机", "isPause: isPause")
     }
 
     override fun onBluetoothNotify(
