@@ -55,8 +55,8 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
     ) {
         GlobalScope.launch {
             logI(TAG, "write:跑步机 控制延时")
-            clearAllRequest()
             writeData = false
+            clearAllRequest()
             delay(300)
             writeData = true
         }
