@@ -2,27 +2,15 @@ package com.cc.device
 
 import android.Manifest
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGattCharacteristic
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.cc.control.BluetoothClientManager
-import com.cc.control.bean.DeviceConnectBean
-import com.cc.control.protocol.DeviceConstants
-import com.cc.control.protocol.DeviceConstants.D_BICYCLE
-import com.cc.control.protocol.string2UUID
 import com.cc.device.adapter.DeviceSearchAdapter
 import com.cc.device.databinding.ActivityDeviceSearchBinding
-import com.cc.device.dialog.SelectDialog
-import com.inuker.bluetooth.library.connect.listener.BluetoothStateListener
-import java.util.*
 
 /**
  * 搜索页面
@@ -48,12 +36,13 @@ class DeviceSearchActivity : AppCompatActivity(), View.OnClickListener {
     private val binding by lazy {
         ActivityDeviceSearchBinding.inflate(layoutInflater)
     }
-    private val connectBean = DeviceConnectBean()
-    private val selectDialog by lazy {
-        SelectDialog(this) { protocol, ota ->
 
-        }
-    }
+    //    private val connectBean = DeviceConnectBean()
+//    private val selectDialog by lazy {
+//        SelectDialog(this) { protocol, ota ->
+//
+//        }
+//    }
     private val adapter by lazy {
         DeviceSearchAdapter().apply {
             binding.recyclerView.layoutManager = LinearLayoutManager(this@DeviceSearchActivity)
@@ -116,7 +105,7 @@ class DeviceSearchActivity : AppCompatActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-        BluetoothClientManager.client.registerBluetoothStateListener(mBluetoothStateListener)
+        //    BluetoothClientManager.client.registerBluetoothStateListener(mBluetoothStateListener)
         binding.btFresh.setOnClickListener(this)
         startScan()
 
@@ -125,25 +114,25 @@ class DeviceSearchActivity : AppCompatActivity(), View.OnClickListener {
     /**
      * 手机蓝牙开关状态监听
      */
-    private val mBluetoothStateListener: BluetoothStateListener =
-        object : BluetoothStateListener() {
-            override fun onBluetoothStateChanged(openOrClosed: Boolean) {
-                if (openOrClosed) startScan()
-            }
-        }
+//    private val mBluetoothStateListener: BluetoothStateListener =
+//        object : BluetoothStateListener() {
+//            override fun onBluetoothStateChanged(openOrClosed: Boolean) {
+//                if (openOrClosed) startScan()
+//            }
+//        }
 
     private fun startScan() {
-        if (requestPermission(PERMISSION_SEARCH_DEVICE, REQUEST_ACCESS_COARSE_LOCATION)) {
-            if (isLocServiceEnable()) {
-                if (BluetoothClientManager.isBluetoothOpened()) {
-                    BluetoothClientManager.openBluetooth()
-                }
-                BluetoothClientManager.startSearch(::scanResult, listOf())
-            } else {
-                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                startActivityForResult(intent, 0)
-            }
-        }
+//        if (requestPermission(PERMISSION_SEARCH_DEVICE, REQUEST_ACCESS_COARSE_LOCATION)) {
+//            if (isLocServiceEnable()) {
+//                if (BluetoothClientManager.isBluetoothOpened()) {
+//                    BluetoothClientManager.openBluetooth()
+//                }
+//                BluetoothClientManager.startSearch(::scanResult, listOf())
+//            } else {
+//                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+//                startActivityForResult(intent, 0)
+//            }
+//        }
     }
 
     private fun scanResult(device: BluetoothDevice?, isSearch: Boolean) {
@@ -187,7 +176,7 @@ class DeviceSearchActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        BluetoothClientManager.client.unregisterBluetoothStateListener(mBluetoothStateListener)
+        // BluetoothClientManager.client.unregisterBluetoothStateListener(mBluetoothStateListener)
     }
 
     /**
