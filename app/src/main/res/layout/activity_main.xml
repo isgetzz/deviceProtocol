@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+
+    <data>
+
+        <variable
+            name="v"
+            type="com.cc.device.MainActivity" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btBicycle"
+            android:tag="1"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="动感单车"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/btTreadmill"
+            android:tag="2"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="跑步机"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/btTechnogym"
+            android:tag="6"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="椭圆机"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/btRow"
+            android:tag="5"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="划船机"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:tag="10"
+            android:id="@+id/btSkipping"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="跳绳"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+<!--        <Button-->
+<!--            android:id="@+id/btSearch"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="50dp"-->
+<!--            android:text="去搜索"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toTopOf="parent" />-->
+    </LinearLayout>
+</layout>

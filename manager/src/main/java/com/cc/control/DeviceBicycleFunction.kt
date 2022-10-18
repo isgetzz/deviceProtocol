@@ -47,7 +47,7 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
         slope: Int,
     ) {
         writeToFile("onDeviceControl 单车",
-            "${deviceDateBean.deviceType} speed: $speed resistance: $resistance slope $slope")
+            "${deviceDateBean.deviceType} speed: $speed resistance: $resistance slope $slope ${deviceDateBean.deviceProtocol}")
 
         write(when (deviceDateBean.deviceProtocol) {
             DeviceConstants.D_SERVICE_TYPE_BQ -> {
