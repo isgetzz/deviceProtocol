@@ -56,12 +56,12 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
         GlobalScope.launch {
             logI(TAG, "write:跑步机 控制延时")
             writeData = false
-            clearAllRequest()
+            delay(300)
+            onWriteStart {
+                write(onWriteTreadmillControl(speed, slope))
+            }
             delay(300)
             writeData = true
-        }
-        onWriteStart {
-            write(onWriteTreadmillControl(speed, slope))
         }
         writeToFile("onDeviceControl 跑步机", "speed: $speed resistance: $resistance slope $slope")
     }

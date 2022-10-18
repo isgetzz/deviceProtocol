@@ -54,26 +54,26 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
         GlobalScope.launch {
             logI(TAG, "write:单车 控制延时")
             writeData = false
-            clearAllRequest()
+            delay(300)
+            write(when (deviceDateBean.deviceProtocol) {
+                DeviceConstants.D_SERVICE_TYPE_BQ -> {
+                    if (deviceDateBean.deviceType == DeviceConstants.D_ROW) {
+                        onWriteBQBicycle5Resistance(resistance)
+                    } else {
+                        onWriteBQBicycle6Resistance(resistance)
+                    }
+                }
+                DeviceConstants.D_SERVICE_TYPE_FTMS -> {
+                    write(onFTMSControl())
+                    onBicycleControl(resistance)
+                }
+                else -> {
+                    onWriteZJBicycleControl(resistance, slope)
+                }
+            })
             delay(300)
             writeData = true
         }
-        write(when (deviceDateBean.deviceProtocol) {
-            DeviceConstants.D_SERVICE_TYPE_BQ -> {
-                if (deviceDateBean.deviceType == DeviceConstants.D_ROW) {
-                    onWriteBQBicycle5Resistance(resistance)
-                } else {
-                    onWriteBQBicycle6Resistance(resistance)
-                }
-            }
-            DeviceConstants.D_SERVICE_TYPE_FTMS -> {
-                write(onFTMSControl())
-                onBicycleControl(resistance)
-            }
-            else -> {
-                onWriteZJBicycleControl(resistance, slope)
-            }
-        })
     }
 
     override fun onBluetoothNotify(
