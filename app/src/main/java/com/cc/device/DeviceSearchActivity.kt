@@ -2,20 +2,27 @@ package com.cc.device
 
 import android.Manifest
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.cc.control.BluetoothClientManager
+import com.cc.control.bean.DeviceConnectBean
+import com.cc.control.protocol.DeviceConstants
+import com.cc.control.protocol.DeviceConstants.D_BICYCLE
+import com.cc.control.protocol.string2UUID
 import com.cc.device.adapter.DeviceSearchAdapter
 import com.cc.device.databinding.ActivityDeviceSearchBinding
 import com.cc.device.dialog.SelectDialog
 import com.inuker.bluetooth.library.connect.listener.BluetoothStateListener
+import java.util.*
 
 /**
  * 搜索页面
@@ -41,6 +48,7 @@ class DeviceSearchActivity : AppCompatActivity(), View.OnClickListener {
     private val binding by lazy {
         ActivityDeviceSearchBinding.inflate(layoutInflater)
     }
+    private val connectBean = DeviceConnectBean()
     private val selectDialog by lazy {
         SelectDialog(this) { protocol, ota ->
 
@@ -50,9 +58,58 @@ class DeviceSearchActivity : AppCompatActivity(), View.OnClickListener {
         DeviceSearchAdapter().apply {
             binding.recyclerView.layoutManager = LinearLayoutManager(this@DeviceSearchActivity)
             binding.recyclerView.adapter = this
-            setOnItemChildClickListener { _, _, _ ->
-                selectDialog.show()
-            }
+//            setOnItemChildClickListener { mAdapter, _, position ->
+//                connectBean.address = (mAdapter.data.get(position) as BluetoothDevice).address
+//                BluetoothClientManager.onDeviceConnect(connectBean) { connectSuccess, f8c4, modelId ->
+//                    connectBean.run {
+//                        deviceProtocol = 2
+//                        serviceUUId = string2UUID(DeviceConstants.D_SERVICE1826)
+//                        serviceUUId.toString().run {
+//                            val contains: Boolean =
+//                                equals(DeviceConstants.D_SERVICE_BQ, ignoreCase = true)
+//                            if (contains) {
+//                                characterWrite = string2UUID(DeviceConstants.D_CHARACTER_BQ)
+//                                characterNotify = characterWrite
+//                            } else if (contains("1826")) {
+//                                when (D_BICYCLE) {
+//                                    DeviceConstants.D_ROW -> {
+//                                        characterNotify =
+//                                            string2UUID(DeviceConstants.D_SERVICE1826_2AD1)
+//                                    }
+//                                    DeviceConstants.D_BICYCLE -> {
+//                                        characterNotify =
+//                                            string2UUID(DeviceConstants.D_SERVICE1826_2AD2)
+//                                    }
+//                                    DeviceConstants.D_TECHNOGYM -> {
+//                                        characterNotify =
+//                                            string2UUID(DeviceConstants.D_SERVICE1826_2ACE)
+//                                    }
+//                                }
+//                                characterWrite = string2UUID(DeviceConstants.D_SERVICE1826_2AD9)
+//                            } else if (lowercase(Locale.getDefault()).contains(DeviceConstants.D_SERVICE_MRK)) {
+//                                characterNotify = string2UUID(DeviceConstants.D_CHARACTER_DATA_MRK)
+//                                characterWrite = characterNotify
+//                            } else {
+//                                //其他类型直接根据特征值获取
+//                                bleProfile!!.getService(serviceUUId)?.run {
+//                                    characters.forEach {
+//                                        if (it.property and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE > 0
+//                                            || it.property and BluetoothGattCharacteristic.PROPERTY_WRITE > 0
+//                                        ) {
+//                                            characterWrite = it.uuid
+//                                        } else if (it.property and BluetoothGattCharacteristic.PROPERTY_NOTIFY > 0 ||
+//                                            it.property and BluetoothGattCharacteristic.PROPERTY_INDICATE > 0
+//                                        ) {
+//                                            characterNotify = it.uuid
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        Log.d("SelectDialog", ": $characterWrite $characterNotify")
+//                    }
+//                }
+//            }
         }
     }
 
