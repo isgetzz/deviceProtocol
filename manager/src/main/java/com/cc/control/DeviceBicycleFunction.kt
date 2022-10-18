@@ -53,8 +53,9 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
             "${deviceDateBean.deviceType} speed: $speed resistance: $resistance slope $slope ${deviceDateBean.deviceProtocol}")
         GlobalScope.launch {
             logI(TAG, "write:单车 控制延时")
+            clearAllRequest()
             writeData = false
-            delay(2000)
+            delay(300)
             writeData = true
         }
         write(when (deviceDateBean.deviceProtocol) {
