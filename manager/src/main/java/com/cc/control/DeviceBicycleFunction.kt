@@ -51,7 +51,12 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
     ) {
         writeToFile("onDeviceControl 单车",
             "${deviceDateBean.deviceType} speed: $speed resistance: $resistance slope $slope ${deviceDateBean.deviceProtocol}")
-
+        GlobalScope.launch {
+            logI(TAG, "write:单车 控制延时")
+            writeData = false
+            delay(2000)
+            writeData = true
+        }
         write(when (deviceDateBean.deviceProtocol) {
             DeviceConstants.D_SERVICE_TYPE_BQ -> {
                 if (deviceDateBean.deviceType == DeviceConstants.D_ROW) {
@@ -68,12 +73,6 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
                 onWriteZJBicycleControl(resistance, slope)
             }
         })
-        GlobalScope.launch {
-            logI(TAG, "write:单车 控制延时")
-            writeData = false
-            delay(2000)
-            writeData = true
-        }
     }
 
     override fun onBluetoothNotify(

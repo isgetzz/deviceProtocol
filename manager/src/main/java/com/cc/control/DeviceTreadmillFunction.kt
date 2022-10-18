@@ -2,7 +2,6 @@ package com.cc.control
 
 import com.cc.control.protocol.*
 import com.inuker.bluetooth.library.beacon.BeaconParser
-import com.inuker.bluetooth.library.utils.ByteUtils
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,14 +53,14 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
         resistance: Int,
         slope: Int,
     ) {
-        onWriteStart {
-            write(onWriteTreadmillControl(speed, slope))
-        }
         GlobalScope.launch {
             logI(TAG, "write:跑步机 控制延时")
             writeData = false
             delay(2000)
             writeData = true
+        }
+        onWriteStart {
+            write(onWriteTreadmillControl(speed, slope))
         }
         writeToFile("onDeviceControl 跑步机", "speed: $speed resistance: $resistance slope $slope")
     }
