@@ -7,6 +7,9 @@ import com.cc.control.protocol.DeviceConstants.D_SERVICE_FFFO
 import com.cc.control.protocol.DeviceConstants.D_SERVICE_MRK
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.utils.ByteUtils
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.experimental.and
 
@@ -65,6 +68,11 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
                 onWriteZJBicycleControl(resistance, slope)
             }
         })
+        GlobalScope.launch {
+            writeData = false
+            delay(200)
+            writeData = true
+        }
     }
 
     override fun onBluetoothNotify(

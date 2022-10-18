@@ -39,6 +39,11 @@ abstract class BaseDeviceFunction : LifecycleObserver {
     open var refreshData = true
 
     /**
+     * 数据获取，防止控制指令跟数据指令间隔太短导致无法控制
+     */
+    open var writeData = true
+
+    /**
      * 记录设备解析完的数据
      */
     var deviceNotifyBean = DeviceTrainBean.DeviceTrainBO()
@@ -164,10 +169,12 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         job = null
         job = GlobalScope.launch(Dispatchers.IO) {
             dateArray.forEach {
-                write(it)
+                if (writeData) {
+                    write(it)
+                }
                 delay(600)
+                onDeviceCmd()
             }
-            onDeviceCmd()
         }
     }
 
@@ -270,7 +277,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                             if (deviceName.contains("MERACH-MR667", true) ||
                                 deviceName.contains("MERACH MR-667", true)
                             ) {
-                               BluetoothClientManager.disConnect(address)
+                                BluetoothClientManager.disConnect(address)
                             }
                             onSuccess?.invoke()
                         }
