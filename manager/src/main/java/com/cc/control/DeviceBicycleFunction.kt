@@ -69,8 +69,9 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
             }
         })
         GlobalScope.launch {
+            logI(TAG, "write:单车 控制延时")
             writeData = false
-            delay(200)
+            delay(2000)
             writeData = true
         }
     }
