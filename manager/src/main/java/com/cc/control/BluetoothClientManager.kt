@@ -219,7 +219,7 @@ object BluetoothClientManager {
 //                            ) {
 //                                characterNotify = character.uuid
 //                            }
-//                        }
+//                        }`
                         bleProfile?.getService(serviceUUId)?.run {
                             characters.forEach {
                                 if (it.property and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE > 0
