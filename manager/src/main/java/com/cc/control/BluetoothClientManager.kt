@@ -209,7 +209,18 @@ object BluetoothClientManager {
                         characterWrite = characterNotify
                     } else {
                         //其他类型直接根据特征值获取
-                        bleProfile!!.getService(serviceUUId)?.run {
+//                        for (character in bleProfile!!.getService(serviceUUId).characters) {
+//                            if (character.property and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE > 0
+//                                || character.property and BluetoothGattCharacteristic.PROPERTY_WRITE > 0
+//                            ) {
+//                                characterWrite = character.uuid
+//                            } else if (character.property and BluetoothGattCharacteristic.PROPERTY_NOTIFY > 0 ||
+//                                character.property and BluetoothGattCharacteristic.PROPERTY_INDICATE > 0
+//                            ) {
+//                                characterNotify = character.uuid
+//                            }
+//                        }
+                        bleProfile?.getService(serviceUUId)?.run {
                             characters.forEach {
                                 if (it.property and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE > 0
                                     || it.property and BluetoothGattCharacteristic.PROPERTY_WRITE > 0
