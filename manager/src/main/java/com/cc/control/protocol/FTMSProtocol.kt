@@ -29,7 +29,7 @@ fun onFTMSProtocol(
                 }
                 if (adr shr 2 and 1 == 1) {
                     //636需要0.5单位值基础再除以2
-                    val divisor = if (adr == 0x0bfe && deviceName.contains("Merach-MR636")) 4 else 2
+                    val divisor = if (adr == 0x0bfe && deviceName.contains("Merach-MR636")&&!deviceName.contains("Merach-MR636D")) 4 else 2
                     //当前SPM、踏频 单位0.5
                     spm = (beaconParser.readShort() / divisor).coerceAtMost(200)
                 }
