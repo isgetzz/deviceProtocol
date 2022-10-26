@@ -7,6 +7,7 @@ import com.cc.control.bean.DeviceConnectBean
 import com.cc.control.bean.DeviceNotifyBean
 import com.cc.control.bean.DeviceTrainBean
 import com.cc.control.protocol.*
+import com.cc.control.protocol.DeviceConstants.D_SERVICE1826_2ADA
 import com.inuker.bluetooth.library.Constants
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.connect.response.BleNotifyResponse
@@ -205,7 +206,9 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                     serviceUUId,
                     string2UUID(DeviceConstants.D_SERVICE1826_2ADA), mNotifyRsp)
             }
-            BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(true, deviceType, address))
+            BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(true,
+                deviceType,
+                address))
             logI(TAG, "notifyRegister $serviceUUId $characterNotify $address")
         }
     }
@@ -215,7 +218,6 @@ abstract class BaseDeviceFunction : LifecycleObserver {
     protected var len = 0
     protected var deviceStatus = -1//状态
     protected var length = 0//数据长度判断是否需要解析当前数据
-
     private val mNotifyRsp: BleNotifyResponse = object : BleNotifyResponse {
         override fun onResponse(code: Int) {
             logD(TAG, "mNotifyRsp：onResponse：$code")
@@ -233,9 +235,13 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                     onBluetoothNotify(service, character, value, BeaconParser(value))
                 }
             }
-            logD(TAG, "mNotifyData: ${DeviceConvert.bytesToHexString(value)} $service  $character" +
-                    "refreshData  $refreshData    adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
-                    "deviceStatus: ${deviceStatus.dvToHex()} length ${length.dvToHex()}")
+            if (character.toString().equals(D_SERVICE1826_2ADA, true)) {
+                deviceNotifyBean.status = adr
+            }
+            logD(TAG,
+                "mNotifyData: ${DeviceConvert.bytesToHexString(value)} $service  $character  " +
+                        "refreshData:$refreshData    adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
+                        "deviceStatus: ${deviceStatus.dvToHex()} length ${length.dvToHex()}")
         }
     }
 

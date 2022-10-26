@@ -19,7 +19,7 @@ import kotlin.experimental.and
  * @Description :单车协议
  */
 class DeviceBicycleFunction : BaseDeviceFunction() {
-
+    private var ftmsStart = true
     override fun onDeviceWrite(isCreate: Boolean) {
         when (deviceDateBean.deviceProtocol) {
             DeviceConstants.D_SERVICE_TYPE_ZJ -> {
@@ -37,8 +37,18 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
             }
             else -> {
                 //开始指令华为部分设备用于结束训练之后恢复连接
-                write(onFTMSControl()) {
-                    write(ByteUtils.stringToBytes("07")) { }
+                //单车636D create 发送完恢复然后短时间又发一条会导致设备时间倒计时并暂停
+                if (deviceDateBean.deviceName.contains("Merach-MR636D")) {
+                    if (adr == 0x02 && len == 0x02 && ftmsStart) {
+                        ftmsStart = false
+                        write(onFTMSControl()) {
+                            write(ByteUtils.stringToBytes("07"))
+                        }
+                    }
+                } else {
+                    write(onFTMSControl()) {
+                        write(ByteUtils.stringToBytes("07"))
+                    }
                 }
             }
         }

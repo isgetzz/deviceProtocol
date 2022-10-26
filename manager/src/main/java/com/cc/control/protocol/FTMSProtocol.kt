@@ -1,15 +1,16 @@
 package com.cc.control.protocol
 
+import com.cc.control.bean.DeviceTrainBean
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.utils.ByteUtils
-import com.cc.control.bean.DeviceTrainBean
 import kotlin.math.max
 import kotlin.math.min
 
 /**
- * @Author      : cc
- * @Date        : on 2022-02-22 11:15.
- * @Description :FTMS 协议
+ * Author      : cc
+ * Date        : on 2022-02-22 11:15.
+ * Description :FTMS 协议
+ *FTMS https://device.harmonyos.com/cn/docs/devicepartner/DevicePartner-Guides/bluetooth-modul-develop-0000001209983499#section14842195055213
  */
 fun onFTMSProtocol(
     deviceNotifyBean: DeviceTrainBean.DeviceTrainBO,
@@ -29,7 +30,10 @@ fun onFTMSProtocol(
                 }
                 if (adr shr 2 and 1 == 1) {
                     //636需要0.5单位值基础再除以2
-                    val divisor = if (adr == 0x0bfe && deviceName.contains("Merach-MR636")&&!deviceName.contains("Merach-MR636D")) 4 else 2
+                    val divisor =
+                        if (adr == 0x0bfe && deviceName.contains("Merach-MR636") && !deviceName.contains(
+                                "Merach-MR636D")
+                        ) 4 else 2
                     //当前SPM、踏频 单位0.5
                     spm = (beaconParser.readShort() / divisor).coerceAtMost(200)
                 }
