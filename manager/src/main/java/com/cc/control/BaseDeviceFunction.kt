@@ -238,14 +238,14 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                     }
                 }
             }
-            if (deviceDateBean.deviceName.contains("Merach-MR636D") && character.toString()
-                    .equals(D_SERVICE1826_2ADA, true) && len == 0x01 && ftmsStart
-            ) {
-                ftmsStart = false
-                write(onFTMSControl()) {
-                    write(ByteUtils.stringToBytes("07"))
-                }
-            }
+//            if (deviceDateBean.deviceName.contains("Merach-MR636D") && character.toString()
+//                    .equals(D_SERVICE1826_2ADA, true) && len == 0x01 && ftmsStart
+//            ) {
+//                ftmsStart = false
+//                write(onFTMSControl()) {
+//                    write(ByteUtils.stringToBytes("07"))
+//                }
+//            }
             logD(TAG,
                 "mNotifyData: ${DeviceConvert.bytesToHexString(value)} 服务特征值: $service $character " +
                         "refreshData:$refreshData  adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
