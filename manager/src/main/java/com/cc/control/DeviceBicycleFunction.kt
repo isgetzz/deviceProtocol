@@ -38,7 +38,7 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
                 //开始指令华为部分设备用于结束训练之后恢复连接
                 //单车636D create 发送完恢复然后短时间又发一条会导致设备时间倒计时并暂停
                 if (deviceDateBean.deviceName.contains("Merach-MR636D")) {
-                    if (adr == 0x02 && len == 0X02 && ftmsStart) {
+                    if (adr == 0x02 && len == 0x02 && ftmsStart) {
                         ftmsStart = false
                         write(onFTMSControl()) {
                             write(ByteUtils.stringToBytes("07"))
