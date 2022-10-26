@@ -227,13 +227,15 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         override fun onNotify(service: UUID, character: UUID, value: ByteArray) {
             if (service.toString() == DeviceConstants.D_SERVICE_DATA_HEART && refreshData) {
                 onBluetoothNotify(service, character, value, BeaconParser(value))
-            } else if (value.size >= 4) {
+            } else if (value.size >= 2) {
                 adr = (value[0].toInt() and 0xff)
                 len = (value[1].toInt() and 0xff)
-                deviceStatus = ((value[2].toInt() and 0xff))
                 length = value.size
-                if (refreshData) {
-                    onBluetoothNotify(service, character, value, BeaconParser(value))
+                if (value.size >= 4) {
+                    deviceStatus = ((value[2].toInt() and 0xff))
+                    if (refreshData) {
+                        onBluetoothNotify(service, character, value, BeaconParser(value))
+                    }
                 }
             }
             if (deviceDateBean.deviceName.contains("Merach-MR636D") && character.toString()
@@ -245,7 +247,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                 }
             }
             logD(TAG,
-                "mNotifyData: ${DeviceConvert.bytesToHexString(value)} $service $character " +
+                "mNotifyData: ${DeviceConvert.bytesToHexString(value)} 服务特征值: $service $character " +
                         "refreshData:$refreshData  adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
                         "deviceStatus: ${deviceStatus.dvToHex()} length ${length.dvToHex()}")
         }
