@@ -218,6 +218,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
     protected var len = 0
     protected var deviceStatus = -1//状态
     protected var length = 0//数据长度判断是否需要解析当前数据
+    protected var ftmsStart = true
     private val mNotifyRsp: BleNotifyResponse = object : BleNotifyResponse {
         override fun onResponse(code: Int) {
             logD(TAG, "mNotifyRsp：onResponse：$code")
@@ -235,12 +236,17 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                     onBluetoothNotify(service, character, value, BeaconParser(value))
                 }
             }
-            if (character.toString().equals(D_SERVICE1826_2ADA, true)) {
-                deviceNotifyBean.status = adr
+            if (deviceDateBean.deviceName.contains("Merach-MR636D") && character.toString()
+                    .equals(D_SERVICE1826_2ADA, true) && len == 0x01 && ftmsStart
+            ) {
+                ftmsStart = false
+                write(onFTMSControl()) {
+                    write(ByteUtils.stringToBytes("07"))
+                }
             }
             logD(TAG,
-                "mNotifyData: ${DeviceConvert.bytesToHexString(value)} $service  $character  " +
-                        "refreshData:$refreshData    adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
+                "mNotifyData: ${DeviceConvert.bytesToHexString(value)} $service $character " +
+                        "refreshData:$refreshData  adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
                         "deviceStatus: ${deviceStatus.dvToHex()} length ${length.dvToHex()}")
         }
     }
