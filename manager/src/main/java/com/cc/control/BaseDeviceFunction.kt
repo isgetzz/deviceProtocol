@@ -70,6 +70,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
 
     /**
      * 开始下发指令
+     * isCreate 目前用于跑步机
      */
     abstract fun onDeviceWrite(isCreate: Boolean)
 
@@ -204,9 +205,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                     serviceUUId,
                     string2UUID(DeviceConstants.D_SERVICE1826_2ADA), mNotifyRsp)
             }
-            BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(true,
-                deviceType,
-                address))
+            BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(true, deviceType, address))
             logI(TAG, "notifyRegister $serviceUUId $characterNotify $address")
         }
     }
@@ -234,10 +233,9 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                     onBluetoothNotify(service, character, value, BeaconParser(value))
                 }
             }
-            logD(TAG, "mNotifyData: ${DeviceConvert.bytesToHexString(value)}")
-            logD(TAG, "mNotifyRs:$refreshData  $service   adr  len deviceStatus length ${
-                DeviceConvert.intArrToHexString(adr, len, deviceStatus, length)
-            }")
+            logD(TAG, "mNotifyData: ${DeviceConvert.bytesToHexString(value)} $service  $character" +
+                    "refreshData  $refreshData    adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
+                    "deviceStatus: ${deviceStatus.dvToHex()} length ${length.dvToHex()}")
         }
     }
 
