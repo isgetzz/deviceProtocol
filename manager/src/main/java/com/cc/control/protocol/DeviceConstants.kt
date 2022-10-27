@@ -60,6 +60,9 @@ object DeviceConstants {
     const val D_SERVICE1826_2AD9 = "00002ad9-0000-1000-8000-00805f9b34fb" //控制指令
     const val D_SERVICE1826_2AD1 = "00002ad1-0000-1000-8000-00805f9b34fb" //划船机读取数据
     const val D_SERVICE1826_2AD2 = "00002ad2-0000-1000-8000-00805f9b34fb" //单车读取数据
+
+    // 0x00其他未知状态 0x01IDLE状态 0x0D 正在跑步时的状态 0x0E Pre-workout，开启前读秒时状态 0x0F Post-workout，结束后读秒时状态
+    const val D_SERVICE1826_2AD3 = "00002ad3-0000-1000-8000-00805f9b34fb"//读取设备状态
     const val D_SERVICE1826_2ACE = "00002ace-0000-1000-8000-00805f9b34fb" //椭圆机读取数据
 
     //FFFO
