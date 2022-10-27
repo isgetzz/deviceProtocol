@@ -23,7 +23,8 @@ class DeviceConnectStatusListener : BleConnectStatusListener() {
                     deviceType = it.deviceType
                     deviceName = it.deviceName
                 })
-                logD("BluetoothClientManager0", "${it.deviceType} ${it.deviceName} $mac $status")
+                logD("BaseDeviceFunction",
+                    " DeviceConnectStatusListener:${it.deviceType} ${it.deviceName} $mac $status")
             }
         }
 

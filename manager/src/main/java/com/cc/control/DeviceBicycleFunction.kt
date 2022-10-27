@@ -39,10 +39,8 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
                 //单车636D create 发送完恢复然后短时间又发一条会导致设备时间倒计时并暂停
                 //02 - 0x01 停止 0x02暂停
                 //04  Started or Resumed
-                if (!deviceDateBean.deviceName.contains("Merach-MR636D")) {
-                    write(onFTMSControl()) {
-                        write(ByteUtils.stringToBytes("07"))
-                    }
+                write(onFTMSControl()) {
+                    write(ByteUtils.stringToBytes("07"))
                 }
 //                if (deviceDateBean.deviceName.contains("Merach-MR636D")) {
 //                    if (adr == 0x02 && len == 0x02 && ftmsStart) {

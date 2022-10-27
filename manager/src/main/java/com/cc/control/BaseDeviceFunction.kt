@@ -111,7 +111,9 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         deviceDataListener = dataListener
         deviceStatusListener = statusListener
         notifyRegister()
-        onDeviceWrite(true)
+        if (!deviceDateBean.deviceName.contains("Merach-MR636D")) {
+            onDeviceWrite(true)
+        }
         deviceHeartRate()
     }
 
@@ -204,7 +206,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
             if (serviceUUId.toString().contains("1826")) {
                 BluetoothClientManager.client.notify(address,
                     serviceUUId,
-                    string2UUID(DeviceConstants.D_SERVICE1826_2ADA), mNotifyRsp)
+                    string2UUID(D_SERVICE1826_2ADA), mNotifyRsp)
             }
             BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(true,
                 deviceType,
