@@ -23,7 +23,7 @@ class DeviceConnectStatusListener : BleConnectStatusListener() {
                     deviceType = it.deviceType
                     deviceName = it.deviceName
                 })
-                logD("BaseDeviceFunction",
+                writeToFile("BaseDeviceFunction",
                     " DeviceConnectStatusListener:${it.deviceType} ${it.deviceName} $mac $status")
             }
         }

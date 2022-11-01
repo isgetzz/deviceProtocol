@@ -43,12 +43,6 @@ abstract class BaseDeviceFunction : LifecycleObserver {
      * 数据获取，防止控制指令跟数据指令间隔太短导致无法控制
      */
     open var writeData = true
-
-    /**
-     * 设备接收数据的时间
-     */
-    open var deviceReceiveTime: Long = 0
-
     /**
      * 记录设备解析完的数据
      */
@@ -241,7 +235,6 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                 if (value.size >= 4) {
                     deviceStatus = ((value[2].toInt() and 0xff))
                     if (refreshData) {
-                        deviceReceiveTime = System.currentTimeMillis()
                         onBluetoothNotify(service, character, value, BeaconParser(value))
                     }
                 }
@@ -288,7 +281,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                             //老版本华为单车需要断开连接
                             if (deviceName.contains("MERACH-MR667", true) ||
                                 deviceName.contains("MERACH MR-667", true)
-                            ) { 
+                            ) {
                                 BluetoothClientManager.disConnect(address)
                             }
                             onSuccess?.invoke()
