@@ -44,6 +44,7 @@ class DeviceTrainBean(
         var timestamp: Long = 0,
         var status: Int = -1, //设备状态用来规避x1彩屏跑步机暂停也会给数据;
         var skippingModel: Int = -1,
+        var deviceTimestamp: Long = 0,//设备收到数据的时间戳
     ) : Cloneable {
         constructor(deviceTime: Long, timestamp: Long) : this(deviceTime = deviceTime,
             timestamp = timestamp,

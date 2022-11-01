@@ -42,15 +42,6 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
                 write(onFTMSControl()) {
                     write(ByteUtils.stringToBytes("07"))
                 }
-//                if (deviceDateBean.deviceName.contains("Merach-MR636D")) {
-//                    if (adr == 0x02 && len == 0x02 && ftmsStart) {
-//                        ftmsStart = false
-//                        write(onFTMSControl()) {
-//                            write(ByteUtils.stringToBytes("07"))
-//                        }
-//                    }
-//                } else {
-//                }
             }
         }
     }
