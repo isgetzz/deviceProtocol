@@ -288,7 +288,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                             //老版本华为单车需要断开连接
                             if (deviceName.contains("MERACH-MR667", true) ||
                                 deviceName.contains("MERACH MR-667", true)
-                            ) {
+                            ) { 
                                 BluetoothClientManager.disConnect(address)
                             }
                             onSuccess?.invoke()
