@@ -43,6 +43,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
      * 数据获取，防止控制指令跟数据指令间隔太短导致无法控制
      */
     open var writeData = true
+
     /**
      * 记录设备解析完的数据
      */
@@ -219,7 +220,6 @@ abstract class BaseDeviceFunction : LifecycleObserver {
     protected var len = 0
     protected var deviceStatus = -1//状态
     protected var length = 0//数据长度判断是否需要解析当前数据
-    protected var ftmsStart = true
     private val mNotifyRsp: BleNotifyResponse = object : BleNotifyResponse {
         override fun onResponse(code: Int) {
             logD(TAG, "mNotifyRsp：onResponse：$code")
