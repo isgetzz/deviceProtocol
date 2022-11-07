@@ -43,8 +43,8 @@ val date = Date()
  * 写入log日志
  */
 fun writeToFile(tag: String, msg: String) {
-    val fileName: String =
-        logFilePath + "/log_" + dateFormatFile.format(date) + ".log" //log日志名，使用时间命名，保证不重复
+    val data = dateFormatFile.format(date)
+    val fileName = "$logFilePath/log_$data.log" //log日志名，使用时间命名，保证不重复
     val file = File(logFilePath)
     if (!file.exists()) {
         file.mkdirs()
@@ -54,7 +54,7 @@ fun writeToFile(tag: String, msg: String) {
     try {
         fos = FileOutputStream(fileName, true) //这里的第二个参数代表追加还是覆盖，true为追加，false 为覆盖
         bw = BufferedWriter(OutputStreamWriter(fos))
-        bw.write("$tag\t $msg\n")
+        bw.write("$data $tag\t $msg\n")
     } catch (e: IOException) {
         e.printStackTrace()
     } finally {
