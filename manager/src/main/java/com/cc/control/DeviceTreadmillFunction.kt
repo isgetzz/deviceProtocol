@@ -54,18 +54,18 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
         resistance: Int,
         slope: Int,
     ) {
+        writeToFile(TAG, "onWriteStart 清除其他指令:跑步机 控制延时 $speed $resistance $slope")
         clearAllRequest()
         GlobalScope.launch {
-            logI(TAG, "write:跑步机 控制延时 $speed $resistance $slope")
             writeData = false
             delay(300)
             onWriteStart {
                 write(onWriteTreadmillControl(speed, slope))
+                writeToFile(TAG, "onWriteStart 成功:跑步机 控制延时 $speed $resistance $slope")
             }
             delay(300)
             writeData = true
         }
-        writeToFile("onDeviceControl 跑步机", "speed: $speed resistance: $resistance slope $slope")
     }
 
     override fun onDeviceTreadmillControl(isPause: Boolean) {
