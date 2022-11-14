@@ -118,8 +118,8 @@ object BluetoothClientManager {
                     }
                     client.registerConnectStatusListener(address, mBleConnectStatusListener)
                 } else {
-                    writeToFile("onDeviceConnect ", "$deviceType address: $address $code")
-                    logD(TAG, "${deviceConnectBean.deviceType} ${deviceConnectBean.address} $code")
+                    writeToFile("$TAG onDeviceConnect ",
+                        "$deviceName $deviceType  address: $address  $code")
                     onConnectListener?.invoke(false, "", "")
                 }
             }

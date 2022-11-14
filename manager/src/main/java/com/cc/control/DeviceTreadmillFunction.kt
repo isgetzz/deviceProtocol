@@ -45,6 +45,7 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
         }
     }
 
+
     /**
      * 智健协议单位0.1所以跑步机速度需要*10
      */
@@ -53,8 +54,9 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
         resistance: Int,
         slope: Int,
     ) {
+        clearAllRequest()
         GlobalScope.launch {
-            logI(TAG, "write:跑步机 控制延时")
+            logI(TAG, "write:跑步机 控制延时 $speed $resistance $slope")
             writeData = false
             delay(300)
             onWriteStart {
