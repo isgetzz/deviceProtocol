@@ -243,7 +243,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                 }
             }
             logD(TAG,
-                "mNotifyData: $data 服务特征值: $service $character " +
+                    "mNotifyData: $data 服务特征值: $service $character " +
                         "refreshData:$refreshData  adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
                         "deviceStatus: ${deviceStatus.dvToHex()} length ${length.dvToHex()}")
         }
