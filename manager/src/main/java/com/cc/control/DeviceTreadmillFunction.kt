@@ -62,8 +62,10 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
             onWriteStart {
                 write(onWriteTreadmillControl(speed, slope))
                 writeToFile(TAG, "onWriteStart 成功:跑步机 控制延时 $speed $resistance $slope")
-                writeData = true
+                //  writeData = true
             }
+            delay(300)
+            writeData = true
         }
     }
 
