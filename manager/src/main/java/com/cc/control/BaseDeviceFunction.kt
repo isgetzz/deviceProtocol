@@ -239,7 +239,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                     }
                 }
                 if (data.startsWith("025302")) {
-                    writeToFile("$TAG  跑步机控制回调", data)
+                    writeToFile("$TAG onWriteStart  跑步机控制回调", data)
                 }
             }
             logD(TAG,
