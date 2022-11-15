@@ -170,7 +170,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
     open fun onDeviceCmd() {
         job?.cancel()
         job = null
-        job = GlobalScope.launch(Dispatchers.IO) {
+        job = GlobalScope.launch {
             dateArray.forEach {
                 if (writeData) {
                     write(it)
@@ -225,6 +225,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         }
 
         override fun onNotify(service: UUID, character: UUID, value: ByteArray) {
+            val data = DeviceConvert.bytesToHexString(value)
             if (service.toString() == DeviceConstants.D_SERVICE_DATA_HEART && refreshData) {
                 onBluetoothNotify(service, character, value, BeaconParser(value))
             } else if (value.size >= 2) {
@@ -237,9 +238,12 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                         onBluetoothNotify(service, character, value, BeaconParser(value))
                     }
                 }
+                if (data.startsWith("025302")) {
+                    writeToFile("$TAG  跑步机控制回调", data)
+                }
             }
             logD(TAG,
-                "mNotifyData: ${DeviceConvert.bytesToHexString(value)} 服务特征值: $service $character " +
+                "mNotifyData: $data 服务特征值: $service $character " +
                         "refreshData:$refreshData  adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
                         "deviceStatus: ${deviceStatus.dvToHex()} length ${length.dvToHex()}")
         }
