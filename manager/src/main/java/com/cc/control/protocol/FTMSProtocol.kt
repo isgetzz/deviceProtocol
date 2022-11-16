@@ -46,7 +46,7 @@ fun onFTMSProtocol(
                     //老的0934距离x2、新版距离正确0x0974;
                     val oldSpinning = adr == 0x0934
                     //2.7.0.1 产品说暂时保留
-                    distance = (distance1 and 0xffffff or distance2) * if (oldSpinning) 2 else 1
+                    distance = (distance1 or (distance2 shl 16)) * if (oldSpinning) 2 else 1
                     count = (distance / 4.6).toInt()
                 }
                 if (adr shr 5 and 1 == 1) {//阻力等级
@@ -91,7 +91,7 @@ fun onFTMSProtocol(
                 if (adr shr 2 + index and 1 == 1) {
                     val distance1 = beaconParser.readShort() //总距离三位
                     val distance2 = beaconParser.readByte()
-                    distance = (distance1 and 0xffffff or distance2)
+                    distance =(distance1 or (distance2 shl 16))
                 }
                 if (adr shr 3 + index and 1 == 1) { //1
                     spm = min(beaconParser.readShort() / 2, 150)//踏频
@@ -148,7 +148,7 @@ fun onFTMSProtocol(
                 if (adr shr 2 and 1 == 1) { //1
                     val distance1 = beaconParser.readShort() //总距离三位
                     val distance2 = beaconParser.readByte()
-                    distance = (distance1 and 0xffffff or distance2)
+                    distance =(distance1 or (distance2 shl 16))
                 }
                 if (adr shr 3 and 1 == 1) { //1
                     beaconParser.readShort() //瞬间速度

@@ -237,8 +237,7 @@ object BluetoothClientManager {
                 }
                 //获取到设备信息发送回调
                 isDeviceConnect = true
-                deviceConnectObserverBean.postValue(DeviceConnectObserverBean(address, true,
-                    deviceType, deviceName))
+                deviceConnectObserverBean.postValue(DeviceConnectObserverBean(address, true, deviceType, deviceName))
             })
         }
     }
