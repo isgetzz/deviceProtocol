@@ -27,7 +27,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
 
     protected var job: Job? = null//数据处理线程
     private var deviceHeartJob: Job? = null//心率的线程
-    protected var dateArray: ArrayList<ByteArray> = ArrayList()//数据指令
+    protected var dateArray: ArrayList<ByteArray> = ArrayList()//获取数据、状态array
 
     /**
      * 柏群单车、跑步机需要先发连接指令,用于直播开启设备判断
