@@ -1,14 +1,11 @@
 package com.cc.control.ota
 
 import android.util.Log
-import com.inuker.bluetooth.library.utils.ByteUtils
 import com.cc.control.protocol.DeviceConvert.bytesToHexSum
 import com.cc.control.protocol.dvSplitByteArrEndSeamProtection
 import com.cc.control.protocol.isFileExist
 import com.cc.control.protocol.readFileToByteArray
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import com.inuker.bluetooth.library.utils.ByteUtils
 import java.util.*
 import kotlin.math.floor
 
@@ -24,7 +21,7 @@ class XXYOta : BaseDeviceOta() {
     private var writeLength = 256 //每个扇区
     private var endWrite: ByteArray? = null
 
-    override fun onFile(filePath: String) {
+    override fun initFilePath(filePath: String) {
         if (!filePath.isFileExist()) {
             return
         }
@@ -42,29 +39,23 @@ class XXYOta : BaseDeviceOta() {
      *
      */
     private fun otaFormat() {
-        job?.cancel()
-        job = null
         if (!isFinish) {
-            job = GlobalScope.launch(context = Dispatchers.IO) {
-                writeByteArrayList.let {
-                    Log.d(TAG, "otaFormat: $writeProgress $totalLength ")
-                    if (writeProgress < totalLength) {
-                        write(writeByteArrayList[writeProgress],
-                            onSuccess = {
-                                writeProgress++
-                                deviceOtaListener?.invoke(D_OTA_UPDATE,
-                                    floor(writeProgress * 1.0 / totalLength * 100).toInt())
-                                otaFormat()
-                            })
-                    } else {
-                        //结束校验
-                        endWrite?.run {
-                            write(this, onSuccess = {
-                                deviceOtaListener?.invoke(D_OTA_SUCCESS, 0)
-                            })
-                        }
-                        job?.cancel()
-                        job = null
+            writeByteArrayList.let {
+                Log.d(TAG, "otaFormat: $writeProgress $totalLength ")
+                if (writeProgress < totalLength) {
+                    write(writeByteArrayList[writeProgress],
+                        onSuccess = {
+                            writeProgress++
+                            deviceOtaListener?.invoke(D_OTA_UPDATE,
+                                floor(writeProgress * 1.0 / totalLength * 100).toInt())
+                            otaFormat()
+                        })
+                } else {
+                    //结束校验
+                    endWrite?.run {
+                        write(this, onSuccess = {
+                            deviceOtaListener?.invoke(D_OTA_SUCCESS, 0)
+                        })
                     }
                 }
             }

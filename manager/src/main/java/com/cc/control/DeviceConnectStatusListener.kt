@@ -15,9 +15,9 @@ class DeviceConnectStatusListener : BleConnectStatusListener() {
         if (status != Constants.STATUS_CONNECTED) {
             //断开的设备解绑订阅，防止连接设备失败还会走回调
             BluetoothClientManager.client.unregisterConnectStatusListener(mac, this)
-            BluetoothClientManager.deviceConnectBean(mac).let {
+            BluetoothClientManager.getDeviceConnectBean(mac, false).let {
                 it.isDeviceConnect = false
-                BluetoothClientManager.deviceConnectObserverBean.postValue(deviceConnectObserverBean.apply {
+                BluetoothClientManager.deviceLastConnectBean.postValue(deviceConnectObserverBean.apply {
                     deviceAddress = mac
                     deviceConnectStatus = false
                     deviceType = it.deviceType

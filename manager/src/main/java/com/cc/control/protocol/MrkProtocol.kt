@@ -227,7 +227,7 @@ fun onMrkProtocol(
 /**
  * 心跳
  */
-fun onWriteHeartRate(): ByteArray {
+fun writeHeartRate(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xaa, 0x01, 0, 0x01, 0x55))
 }
 
@@ -235,7 +235,7 @@ fun onWriteHeartRate(): ByteArray {
  * mrk复位设置为正常模式并且清零数据
  * 页面退出调用
  */
-fun onWriteMrkStop(): ByteArray {
+fun writeMrkStop(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xAA, 0x04, 0x02, 0x05,
         0x04 xor 0x02 xor 0x05,
         0x55))
@@ -244,7 +244,7 @@ fun onWriteMrkStop(): ByteArray {
 /**
  * MRK开始
  */
-fun onWriteMrkStart(): ByteArray {
+fun writeMrkStart(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xAA, 0x04, 0x02, 0x03,
         0x04 xor 0x02 xor 0x03,
         0x55)
@@ -255,7 +255,7 @@ fun onWriteMrkStart(): ByteArray {
  * 复位设置为正常模式并且清零数据
  * 目前用于跳绳切换模式
  */
-fun onWriteMrkReset(): ByteArray {
+fun writeMrkReset(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xAA, 0x04, 0x02, 0x06,
         0x04 xor 0x02 xor 0x06,
         0x55))
@@ -268,7 +268,7 @@ fun onWriteMrkReset(): ByteArray {
  * 参考 + 异或校验码 固定包尾 0x55
  * 目前用于跳绳
  */
-fun onWriteMrkModel(status: Int = 0): ByteArray {
+fun writeMrkModel(status: Int = 0): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xAA, 0x05, 0x02, 0x17, status,
         0x05 xor 0x02 xor 0x17 xor status,
         0x55))
@@ -279,7 +279,7 @@ fun onWriteMrkModel(status: Int = 0): ByteArray {
  * 0x10 总协议设置次数
  * 0x11 总协议设置时间
  */
-fun onWriteTargetNum(model: Int, targetNum: Int): ByteArray {
+fun writeTargetNum(model: Int, targetNum: Int): ByteArray {
     val cmd = if (model == DeviceConstants.D_TRAIN_NUM) 0x10 else 0x11
     return ByteUtils.stringToBytes(intArrToHexString(0xAA, 0x08, 0x02, cmd) +
             DeviceConvert.intTo4HexString(targetNum) +

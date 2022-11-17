@@ -31,7 +31,7 @@ const val DEVICE_TREADMILL_LENGTH = 17  //数据长度
  * 除了跳绳其他设备都需要发送一个指令在获取数据,防止指令发送失效
  *
  */
-fun onWriteZJModelId(): ByteArray {
+fun readZJModelId(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x50, 0x00, 0x50, 0x03))
 }
 
@@ -40,7 +40,7 @@ fun onWriteZJModelId(): ByteArray {
  ***********************************************
  *设置模式 0-自由训练  1-倒计数  2-倒计时
  */
-fun onWriteZJSkippingModel(
+fun writeZJSkippingModel(
     model: Int = 0,
     targetNum: Int = 0,
 ): ByteArray {
@@ -64,28 +64,28 @@ fun onWriteZJSkippingModel(
 /**
  * 开始指令,模式切换，之后调用会清除数据
  */
-fun onWriteSkippingStart(): ByteArray {
+fun writeSkippingStart(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(4, 0x02, 0x81, 0x04 xor 0x02 xor 0x81))
 }
 
 /**
  * 300ms读取一次数据
  */
-fun onWriteZJSkippingData(): ByteArray {
+fun writeZJSkippingData(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(4, 0x02, 0x03, 0x04 xor 0x02 xor 0x03))
 }
 
 /**
  * 300ms电量
  */
-fun onWriteZJSkippingElectric(): ByteArray {
+fun writeZJSkippingElectric(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(4, 0x02, 0x02, 0x04 xor 0x02 xor 0x02))
 }
 
 /**
  * 清除数据
  */
-fun onWriteZJSkippingClear(): ByteArray {
+fun writeZJSkippingClear(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x04, 0x02, 0x84, 0x04 xor 0x02 xor 0x84))
 }
 
@@ -94,7 +94,7 @@ fun onWriteZJSkippingClear(): ByteArray {
  * ***********************************************
  * 设置智健阻力Q1划船机、单车
  */
-fun onWriteZJBicycleControl(resistance: Int, slope: Int): ByteArray {
+fun writeZJBicycleControl(resistance: Int, slope: Int): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x44, 0x05,
         resistance, slope,
         0x44 xor 0x05 xor resistance xor slope,
@@ -104,53 +104,53 @@ fun onWriteZJBicycleControl(resistance: Int, slope: Int): ByteArray {
 /**
  * 获取智健运动数据
  */
-fun onWriteZJBicycleData(): ByteArray {
+fun writeZJBicycleData(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x43, 0x01, 0x42, 0x03))
 }
 
-fun onWriteZJBicycleClear(): ByteArray {
+fun writeZJBicycleClear(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x44, 0x04, 0x40, 0x03))
 }
 
 /**
  * 获取智健运动状态
  */
-fun onWriteZJBicycleStatus(): ByteArray {
+fun writeZJBicycleStatus(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x42, 0x42, 0x03))
 }
 
 /**
  * 智健跑步机************************************
  */
-fun onWriteTreadmillClear(): ByteArray {
+fun writeTreadmillClear(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x53, 0x03, 0x53 xor 0x03, 0x03))
 }
 
 /**
  *获取数据
  */
-fun onWriteTreadmillData(): ByteArray {
+fun writeTreadmillData(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x51, 0x51, 0x03))
 }
 
-fun onWriteTreadmillStop(): ByteArray {
+fun writeTreadmillStop(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x53, 0x0A, 0x53 xor 0x0A, 0x03))
 }
 
 /**
  * 跑步机控制速度坡度
  */
-fun onWriteTreadmillControl(speed: Int, slope: Int): ByteArray {
+fun writeTreadmillControl(speed: Int, slope: Int): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02,
         0x53, 0x02, speed, slope,
         0x53 xor 0x02 xor speed xor slope, 0x03))
 }
 
-fun onWriteTreadmillStart(): ByteArray {
+fun writeTreadmillStart(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x53, 0x09, 0x53 xor 9, 0x03))
 }
 
-fun onWriteTreadmillReady(): ByteArray {
+fun writeTreadmillReady(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x53, 0x01,
         0, 0, 0, 0, 0, 0, 0, 0,
         0x02 xor 0x53 xor 0x01, 0x3))

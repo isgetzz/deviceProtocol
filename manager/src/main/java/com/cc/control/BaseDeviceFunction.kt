@@ -25,8 +25,8 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         const val TAG = "BaseDeviceFunction"
     }
 
-    protected var job: Job? = null//数据处理线程
-    private var deviceHeartJob: Job? = null//心率的线程
+    private var job: Job? = null//数据相关
+    private var deviceHeartJob: Job? = null//心率相关
     protected var dateArray: ArrayList<ByteArray> = ArrayList()//获取数据、状态array
 
     /**
@@ -47,17 +47,17 @@ abstract class BaseDeviceFunction : LifecycleObserver {
     /**
      * 记录设备解析完的数据
      */
-    var deviceNotifyBean = DeviceTrainBean.DeviceTrainBO()
+    open var deviceNotifyBean = DeviceTrainBean.DeviceTrainBO()
+
+    /**
+     *根据设备类型获取当前设备信息`
+     */
+    open var deviceConnectInfoBean: DeviceConnectBean = DeviceConnectBean()
 
     /**
      *设备状态回调
      */
     protected var deviceStatusListener: DeviceStatusListener? = null
-
-    /**
-     *根据设备类型获取当前设备信息`
-     */
-    var deviceDateBean: DeviceConnectBean = DeviceConnectBean()
 
     /**
      * 数据回调
@@ -106,14 +106,14 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         dataListener: ((DeviceTrainBean.DeviceTrainBO) -> Unit),
         statusListener: DeviceStatusListener? = null,
     ) {
-        deviceDateBean = BluetoothClientManager.deviceConnectStatus(deviceType)
+        deviceConnectInfoBean = BluetoothClientManager.getDeviceConnectBean(deviceType)
         deviceDataListener = dataListener
         deviceStatusListener = statusListener
         notifyRegister()
-        if (!deviceDateBean.deviceName.contains("Merach-MR636D")) {
+        if (!deviceConnectInfoBean.deviceName.contains("Merach-MR636D")) {
             onDeviceWrite(true)
         }
-        deviceHeartRate()
+        writeDeviceHeart()
     }
 
     /**
@@ -126,7 +126,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         if (byteArray == null) {
             return
         }
-        deviceDateBean.run {
+        deviceConnectInfoBean.run {
             BluetoothClientManager.client.write(
                 address,
                 serviceUUId,
@@ -150,7 +150,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         readCharacterUUId: UUID,
         onSuccess: ((ByteArray) -> Unit)?,
     ) {
-        deviceDateBean.run {
+        deviceConnectInfoBean.run {
             BluetoothClientManager.client.read(
                 address,
                 readServiceUUId,
@@ -167,7 +167,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
      *  设备发送获取数据指令
      *  statusCmd 部分设备需要先获取状态
      */
-    open fun onDeviceCmd() {
+    open fun writeDeviceCmd() {
         job?.cancel()
         job = null
         job = GlobalScope.launch {
@@ -176,7 +176,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                     write(it)
                 }
                 delay(600)
-                onDeviceCmd()
+                writeDeviceCmd()
             }
         }
     }
@@ -196,7 +196,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
      * 华为服务通道订阅数据通知
      */
     open fun notifyRegister() {
-        deviceDateBean.run {
+        deviceConnectInfoBean.run {
             BluetoothClientManager.client.notify(address,
                 serviceUUId,
                 characterNotify,
@@ -250,37 +250,37 @@ abstract class BaseDeviceFunction : LifecycleObserver {
     }
 
     /**
-     * 设备心跳
+     * 设备下发心跳
      */
-    open fun deviceHeartRate() {
-        if (deviceDateBean.hasHeartRate) {
+    open fun writeDeviceHeart() {
+        if (deviceConnectInfoBean.hasHeartRate) {
             deviceHeartJob = GlobalScope.launch(Dispatchers.IO) {
                 BluetoothClientManager.client.write(
-                    deviceDateBean.address,
+                    deviceConnectInfoBean.address,
                     string2UUID(DeviceConstants.D_SERVICE_MRK),
                     string2UUID(DeviceConstants.D_CHARACTER_HEART_MRK),
-                    onWriteHeartRate()
+                    writeHeartRate()
                 ) {
                     logD(TAG, "deviceHeartRate: $it")
                 }
                 delay(20000)
                 deviceHeartJob?.cancel()
-                deviceHeartRate()
+                writeDeviceHeart()
             }
         }
     }
 
     /**
-     * 空踩数据清除并上报
-     * @param canClear 部分设备不能清除
-     * @param onSuccess 指令发送成功回调
+     * 根据类型下发清除指令
+     * canClear 部分设备不能清除
+     *  onSuccess 指令发送成功回调
      */
-    open fun onDeviceClear(canClear: Boolean = true, onSuccess: (() -> Unit)? = null) {
+    open fun writeDeviceClear(canClear: Boolean = true, onSuccess: (() -> Unit)? = null) {
         if (canClear) {
-            deviceDateBean.run {
+            deviceConnectInfoBean.run {
                 if (deviceProtocol == 2) {
-                    write(onFTMSControl()) {
-                        write(onFTMSClear()) {
+                    write(writeFTMSControl()) {
+                        write(writeFTMSClear()) {
                             //老版本华为单车需要断开连接
                             if (deviceName.contains("MERACH-MR667", true) ||
                                 deviceName.contains("MERACH MR-667", true)
@@ -308,8 +308,8 @@ abstract class BaseDeviceFunction : LifecycleObserver {
      * 清除所有请求，则传入0
      */
     open fun clearAllRequest(clearType: Int = 0) {
-        if (deviceDateBean.address.isNotEmpty())
-            BluetoothClientManager.client.clearRequest(deviceDateBean.address, clearType)
+        if (deviceConnectInfoBean.address.isNotEmpty())
+            BluetoothClientManager.client.clearRequest(deviceConnectInfoBean.address, clearType)
     }
 
     /**
@@ -317,6 +317,13 @@ abstract class BaseDeviceFunction : LifecycleObserver {
      */
     open fun registerStatusListener(deviceStatusListener: DeviceStatusListener) {
         this.deviceStatusListener = deviceStatusListener
+    }
+
+    /**
+     *数据回调回调
+     */
+    open fun registerDataListener(dataListener: ((DeviceTrainBean.DeviceTrainBO) -> Unit)) {
+        this.deviceDataListener = dataListener
     }
 
     /**
@@ -328,14 +335,14 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         job = null
         deviceHeartJob?.cancel()
         deviceHeartJob = null
-        onDeviceClear()
-        deviceDateBean.serviceUUId?.run {
-            BluetoothClientManager.client.unnotify(deviceDateBean.address,
-                deviceDateBean.serviceUUId,
-                deviceDateBean.characterNotify) {}
+        writeDeviceClear()
+        deviceConnectInfoBean.serviceUUId?.run {
+            BluetoothClientManager.client.unnotify(deviceConnectInfoBean.address,
+                deviceConnectInfoBean.serviceUUId,
+                deviceConnectInfoBean.characterNotify) {}
             BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(false,
-                deviceDateBean.deviceType,
-                deviceDateBean.address))
+                deviceConnectInfoBean.deviceType,
+                deviceConnectInfoBean.address))
         }
         refreshData = false
         deviceDataListener = null

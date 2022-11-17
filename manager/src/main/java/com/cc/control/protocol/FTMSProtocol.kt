@@ -190,14 +190,14 @@ fun onFTMSProtocol(
 /**
  * 华为控制前置指令
  */
-fun onFTMSControl(): ByteArray {
+fun writeFTMSControl(): ByteArray {
     return ByteUtils.stringToBytes("00")
 }
 
 /**
  * 华为清除数据
  */
-fun onFTMSClear(): ByteArray {
+fun writeFTMSClear(): ByteArray {
     return ByteUtils.stringToBytes("0801")
 }
 
@@ -205,6 +205,6 @@ fun onFTMSClear(): ByteArray {
  * 单车
  * 华为控制
  */
-fun onBicycleControl(resistance: Int): ByteArray {
+fun writeBicycleControl(resistance: Int): ByteArray {
     return ByteUtils.stringToBytes(DeviceConvert.intArrToHexString(0x04, resistance))
 }

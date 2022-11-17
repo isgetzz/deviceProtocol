@@ -14,7 +14,6 @@ import com.inuker.bluetooth.library.Code.REQUEST_SUCCESS
 import com.inuker.bluetooth.library.Constants
 import com.inuker.bluetooth.library.connect.response.BleNotifyResponse
 import com.inuker.bluetooth.library.utils.ByteUtils
-import kotlinx.coroutines.Job
 import java.util.*
 import kotlin.math.floor
 
@@ -42,10 +41,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
     /**
      * fileName 文件路径
      */
-    abstract fun onFile(filePath: String)
-
-    protected var job: Job? = null
-
+    abstract fun initFilePath(filePath: String)
     /**
      * 结束标识
      */
@@ -199,8 +195,6 @@ abstract class BaseDeviceOta : LifecycleObserver {
         }
         deviceOtaListener = null
         isFinish = true
-        job?.cancel()
-        job = null
     }
 
     /**
@@ -213,7 +207,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
     /**
      * 结束指令
      */
-    protected fun onOTAEnd(index: Int): ByteArray {
+    protected fun writeOtaFinish(index: Int): ByteArray {
         return ByteUtils.stringToBytes("02ff" + CRC16.stringTransposition(index) + CRC16.stringTransposition(
             index.inv() and 0xffff))
     }

@@ -4,9 +4,6 @@ import com.cc.control.logD
 import com.cc.control.protocol.*
 import com.cc.control.protocol.DeviceConvert.*
 import com.inuker.bluetooth.library.utils.ByteUtils.stringToBytes
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.math.ceil
 
@@ -38,7 +35,7 @@ class LSWOta : BaseDeviceOta() {
         const val D_OTA_SUCCESS_LSW = "05"//当前总包数 cmd
     }
 
-    override fun onFile(filePath: String) {
+    override fun initFilePath(filePath: String) {
         if (!filePath.isFileExist()) {
             return
         }
@@ -70,39 +67,35 @@ class LSWOta : BaseDeviceOta() {
      * 每个扇区 length=4096/(mtu-4)
      */
     private fun otaFormat() {
-        job?.cancel()
-        job = null
         if (isFinish) {
             return
         }
-        job = GlobalScope.launch(context = Dispatchers.IO) {
-            writeByteArrayList.let {
-                //向上取整扇区/mtu-4
-                logD(TAG, "otaFormat-1:当前扇区 $writeLittlePosition  扇区总长度$writeLittleLength")
-                if (writeLittlePosition < writeLittleLength) {
-                    writeNoRsp(writeLittleByteArrayList[writeLittlePosition],
-                        writeTotalSize,
-                        writeProgress,
-                        writeLittleLength,
-                        writeLittlePosition) {
-                        writeProgress++
-                        writeLittlePosition++
+        writeByteArrayList.let {
+            //向上取整扇区/mtu-4
+            logD(TAG, "otaFormat-1:当前扇区 $writeLittlePosition  扇区总长度$writeLittleLength")
+            if (writeLittlePosition < writeLittleLength) {
+                writeNoRsp(writeLittleByteArrayList[writeLittlePosition],
+                    writeTotalSize,
+                    writeProgress,
+                    writeLittleLength,
+                    writeLittlePosition) {
+                    writeProgress++
+                    writeLittlePosition++
+                    otaFormat()
+                }
+            } else {
+                read {
+                    if (ackCheck(it, writeLength, deviceConnectBean.mtu - 4)) {
+                        writeLittlePosition = checkPosition(it, writeLittlePosition)
                         otaFormat()
-                    }
-                } else {
-                    read {
-                        if (ackCheck(it, writeLength, deviceConnectBean.mtu - 4)) {
-                            writeLittlePosition = checkPosition(it, writeLittlePosition)
-                            otaFormat()
+                    } else {
+                        writeTotalPosition++
+                        if (writeTotalPosition < totalLength) {
+                            writePosition()
                         } else {
-                            writeTotalPosition++
-                            if (writeTotalPosition < totalLength) {
-                                writePosition()
-                            } else {
-                                write(stringToBytes(D_OTA_SUCCESS_LSW), true) {
-                                    deviceOtaListener?.invoke(D_OTA_SUCCESS, 0)
-                                    resetUpdate()
-                                }
+                            write(stringToBytes(D_OTA_SUCCESS_LSW), true) {
+                                deviceOtaListener?.invoke(D_OTA_SUCCESS, 0)
+                                resetUpdate()
                             }
                         }
                     }

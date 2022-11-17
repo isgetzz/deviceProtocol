@@ -28,17 +28,17 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
      */
     private fun onWriteStart(onSuccessCallback: (() -> Unit)? = null) {
         if (dateArray.isEmpty()) {
-            dateArray.add(onWriteTreadmillData())
+            dateArray.add(writeTreadmillData())
         }
         if (readyConnect) {
-            onDeviceCmd()
+            writeDeviceCmd()
             onSuccessCallback?.invoke()
         } else {
-            write(onWriteZJModelId())
-            write(onWriteTreadmillStart()) {
-                write(onWriteTreadmillReady()) {
+            write(readZJModelId())
+            write(writeTreadmillStart()) {
+                write(writeTreadmillReady()) {
                     readyConnect = true
-                    onDeviceCmd()
+                    writeDeviceCmd()
                     onSuccessCallback?.invoke()
                 }
             }
@@ -60,7 +60,7 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
             writeData = false
             delay(300)
             onWriteStart {
-                write(onWriteTreadmillControl(speed, slope))
+                write(writeTreadmillControl(speed, slope))
                 writeToFile(TAG, "onWriteStart 成功:跑步机 控制延时 $speed $resistance $slope")
                 //  writeData = true
             }
@@ -72,7 +72,7 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
     override fun onDeviceTreadmillControl(isPause: Boolean) {
         clearAllRequest()
         onWriteStart {
-            write(if (isPause) onWriteTreadmillStop() else onWriteTreadmillStart())
+            write(if (isPause) writeTreadmillStop() else writeTreadmillStart())
         }
         writeToFile("onDeviceTreadmillControl 跑步机", "isPause: $isPause")
     }
@@ -136,6 +136,6 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
     }
 
     override fun onDestroyWrite(): ByteArray {
-        return onWriteTreadmillClear()
+        return writeTreadmillClear()
     }
 }
