@@ -14,7 +14,6 @@ import com.inuker.bluetooth.library.Code.REQUEST_SUCCESS
 import com.inuker.bluetooth.library.Constants
 import com.inuker.bluetooth.library.connect.response.BleNotifyResponse
 import com.inuker.bluetooth.library.utils.ByteUtils
-import kotlinx.coroutines.Job
 import java.util.*
 import kotlin.math.floor
 
