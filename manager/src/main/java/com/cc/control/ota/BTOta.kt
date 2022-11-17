@@ -24,7 +24,7 @@ class BTOta : BaseDeviceOta() {
     private var writeTotalSize = 0//总包长
     private var writePosition = 0 //当前包index
 
-    override fun onFile(filePath: String) {
+    override fun initFilePath(filePath: String) {
         if (!filePath.isFileExist()) {
             return
         }

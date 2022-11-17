@@ -14,32 +14,32 @@ import java.util.*
 import kotlin.experimental.and
 
 /**
- * @Author      : cc
- * @Date        : on 2022-02-20 12:54.
- * @Description :单车协议
+ *  : cc
+ *  : on 2022-02-20 12:54.
+ *  :单车协议
  */
 class DeviceBicycleFunction : BaseDeviceFunction() {
     override fun onDeviceWrite(isCreate: Boolean) {
-        when (deviceDateBean.deviceProtocol) {
+        when (deviceConnectInfoBean.deviceProtocol) {
             DeviceConstants.D_SERVICE_TYPE_ZJ -> {
                 if (dateArray.isEmpty()) {
-                    dateArray.add(onWriteZJBicycleData())
-                    dateArray.add(onWriteZJBicycleStatus())
+                    dateArray.add(writeZJBicycleData())
+                    dateArray.add(writeZJBicycleStatus())
                 }
-                write(onWriteZJModelId(), ::onDeviceCmd)
+                write(readZJModelId(), ::writeDeviceCmd)
             }
             DeviceConstants.D_SERVICE_TYPE_OTHER -> {
                 //   serviceUUId.toString().equals(D_SERVICE_FFFO, ignoreCase = true)
             }
             DeviceConstants.D_SERVICE_TYPE_BQ -> {
-                write(onWriteBQBicycleConnect())
+                write(writeBQBicycleConnect())
             }
             else -> {
                 //开始指令华为部分设备用于结束训练之后恢复连接
                 //单车636D create 发送完恢复然后短时间又发一条会导致设备时间倒计时并暂停
                 //02 - 0x01 停止 0x02暂停
                 //04  Started or Resumed
-                write(onFTMSControl()) {
+                write(writeFTMSControl()) {
                     write(ByteUtils.stringToBytes("07"))
                 }
             }
@@ -52,25 +52,25 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
         slope: Int,
     ) {
         writeToFile("onDeviceControl 单车",
-            "${deviceDateBean.deviceType} speed: $speed resistance: $resistance slope $slope ${deviceDateBean.deviceProtocol}")
+            "${deviceConnectInfoBean.deviceType} speed: $speed resistance: $resistance slope $slope ${deviceConnectInfoBean.deviceProtocol}")
         GlobalScope.launch {
             logI(TAG, "write:单车 控制延时")
             writeData = false
             delay(300)
-            write(when (deviceDateBean.deviceProtocol) {
+            write(when (deviceConnectInfoBean.deviceProtocol) {
                 DeviceConstants.D_SERVICE_TYPE_BQ -> {
-                    if (deviceDateBean.deviceType == DeviceConstants.D_ROW) {
-                        onWriteBQBicycle5Resistance(resistance)
+                    if (deviceConnectInfoBean.deviceType == DeviceConstants.D_ROW) {
+                        writeBQBicycle5Resistance(resistance)
                     } else {
-                        onWriteBQBicycle6Resistance(resistance)
+                        writeBQBicycle6Resistance(resistance)
                     }
                 }
                 DeviceConstants.D_SERVICE_TYPE_FTMS -> {
-                    write(onFTMSControl())
-                    onBicycleControl(resistance)
+                    write(writeFTMSControl())
+                    writeBicycleControl(resistance)
                 }
                 else -> {
-                    onWriteZJBicycleControl(resistance, slope)
+                    writeZJBicycleControl(resistance, slope)
                 }
             })
             delay(300)
@@ -91,17 +91,17 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
             }
             D_SERVICE1826 -> {
                 onFTMSProtocol(deviceNotifyBean,
-                    deviceDateBean.deviceName,
-                    deviceDateBean.deviceType,
+                    deviceConnectInfoBean.deviceName,
+                    deviceConnectInfoBean.deviceType,
                     beaconParser)
                 deviceDataListener?.invoke(deviceNotifyBean)
             }
             D_SERVICE_FFFO, D_SERVICE_BQ -> {
                 onFFF0Protocol(deviceNotifyBean,
-                    deviceDateBean.deviceType,
+                    deviceConnectInfoBean.deviceType,
                     beaconParser,
                     value.size) { startNotify, byteArray: ByteArray? ->
-                    if (deviceDateBean.deviceProtocol == DeviceConstants.D_SERVICE_TYPE_ZJ) {
+                    if (deviceConnectInfoBean.deviceProtocol == DeviceConstants.D_SERVICE_TYPE_ZJ) {
                         deviceDataListener?.invoke(deviceNotifyBean)
                     } else if (startNotify) {
                         if (readyConnect) {
@@ -110,7 +110,7 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
                             byteArray?.run {
                                 dateArray.add(this)
                             }
-                            onDeviceCmd()
+                            writeDeviceCmd()
                             readyConnect = true
                         }
                     } else {
@@ -141,13 +141,13 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
     }
 
     override fun onDestroyWrite(): ByteArray {
-        return when (deviceDateBean.deviceProtocol) {
+        return when (deviceConnectInfoBean.deviceProtocol) {
             DeviceConstants.D_SERVICE_TYPE_BQ -> {
-                onWriteBQBicycleClear()
+                writeBQBicycleClear()
             }
             else -> {
                 //华为base处理了,只需要处理ZJ
-                onWriteZJBicycleClear()
+                writeZJBicycleClear()
             }
         }
     }

@@ -1,6 +1,5 @@
 package com.cc.control.protocol
 
-import android.util.Log
 import com.cc.control.bean.UnitEnum
 import com.cc.control.logD
 import java.io.BufferedInputStream

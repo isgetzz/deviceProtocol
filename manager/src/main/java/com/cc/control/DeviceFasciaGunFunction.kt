@@ -1,10 +1,7 @@
 package com.cc.control
 
+import com.cc.control.protocol.*
 import com.inuker.bluetooth.library.beacon.BeaconParser
-import com.cc.control.protocol.onWriteFasciaGunClear
-import com.cc.control.protocol.onWriteFasciaGunConnect
-import com.cc.control.protocol.onWriteFasciaGunControl
-import com.cc.control.protocol.onWriteFasciaGunStart
 import java.util.*
 
 /**
@@ -23,9 +20,9 @@ class DeviceFasciaGunFunction: BaseDeviceFunction() {
      * 连接-开始-设置阻力
      */
     override fun onDeviceWrite(isCreate: Boolean) {
-        write(onWriteFasciaGunConnect()) {
-            write(onWriteFasciaGunStart()) {
-                write(onWriteFasciaGunControl())
+        write(writeFasciaGunConnect()) {
+            write(writeFasciaGunStart()) {
+                write(writeFasciaGunControl())
             }
         }
     }
@@ -36,7 +33,7 @@ class DeviceFasciaGunFunction: BaseDeviceFunction() {
         slope: Int,
     ) {
         writeToFile("onDeviceControl 筋膜枪", "speed: $speed resistance: $resistance slope $slope")
-        write(onWriteFasciaGunControl(resistance))
+        write(writeFasciaGunControl(resistance))
     }
 
     override fun onBluetoothNotify(
@@ -49,7 +46,7 @@ class DeviceFasciaGunFunction: BaseDeviceFunction() {
             deviceNotifyBean.run {
                 when (deviceStatus) {
                     STATUS_PAUSE -> {
-                        write(onWriteFasciaGunStart())
+                        write(writeFasciaGunStart())
                     }
                     STATUS_WAIT -> {
                         deviceNotifyBean.status = deviceStatus
@@ -74,6 +71,6 @@ class DeviceFasciaGunFunction: BaseDeviceFunction() {
     }
 
     override fun onDestroyWrite(): ByteArray {
-        return onWriteFasciaGunClear()
+        return writeFasciaGunClear()
     }
 }

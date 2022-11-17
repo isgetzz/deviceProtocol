@@ -1,11 +1,11 @@
 package com.cc.control.ota
 
 import android.util.Log
-import com.inuker.bluetooth.library.utils.ByteUtils
 import com.cc.control.protocol.DeviceConvert.bytesToHexSum
 import com.cc.control.protocol.dvSplitByteArrEndSeamProtection
 import com.cc.control.protocol.isFileExist
 import com.cc.control.protocol.readFileToByteArray
+import com.inuker.bluetooth.library.utils.ByteUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -24,7 +24,7 @@ class XXYOta : BaseDeviceOta() {
     private var writeLength = 256 //每个扇区
     private var endWrite: ByteArray? = null
 
-    override fun onFile(filePath: String) {
+    override fun initFilePath(filePath: String) {
         if (!filePath.isFileExist()) {
             return
         }

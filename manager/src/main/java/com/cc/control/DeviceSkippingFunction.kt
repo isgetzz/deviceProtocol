@@ -1,7 +1,7 @@
 package com.cc.control
 
-import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.cc.control.protocol.*
+import com.inuker.bluetooth.library.beacon.BeaconParser
 import java.util.*
 
 /**
@@ -13,11 +13,11 @@ import java.util.*
 class DeviceSkippingFunction : BaseDeviceFunction() {
     override fun onDeviceWrite(isCreate: Boolean) {
         if (dateArray.isEmpty()) {
-            dateArray.add(onWriteZJSkippingData())
-            dateArray.add(onWriteZJSkippingElectric())
+            dateArray.add(writeZJSkippingData())
+            dateArray.add(writeZJSkippingElectric())
         }
-        if (deviceDateBean.deviceProtocol != DeviceConstants.D_SERVICE_TYPE_MRK) {
-            onDeviceCmd()
+        if (deviceConnectInfoBean.deviceProtocol != DeviceConstants.D_SERVICE_TYPE_MRK) {
+            writeDeviceCmd()
         }
     }
 
@@ -25,15 +25,15 @@ class DeviceSkippingFunction : BaseDeviceFunction() {
      * 跳绳如果是自由训练需要设置，其他模式设置完目标的时候就下发模式
      */
     override fun onDeviceSetModel(model: Int, targetNum: Int, onSuccess: (() -> Unit)?) {
-        if (deviceDateBean.deviceProtocol == DeviceConstants.D_SERVICE_TYPE_MRK) {
-            write(onWriteMrkReset()) {
+        if (deviceConnectInfoBean.deviceProtocol == DeviceConstants.D_SERVICE_TYPE_MRK) {
+            write(writeMrkReset()) {
                 if (model == DeviceConstants.D_TRAIN_FREE) {
-                    write(onWriteMrkStart())
+                    write(writeMrkStart())
                 } else {
-                    write(onWriteTargetNum(model, targetNum), onSuccess)
+                    write(writeTargetNum(model, targetNum), onSuccess)
                 }
             }
-        } else write(onWriteZJSkippingModel(model, targetNum), onSuccess)
+        } else write(writeZJSkippingModel(model, targetNum), onSuccess)
     }
 
     override fun onDeviceControl(
@@ -49,7 +49,7 @@ class DeviceSkippingFunction : BaseDeviceFunction() {
         value: ByteArray,
         beaconParser: BeaconParser,
     ) {
-        if (deviceDateBean.deviceProtocol == 1) {
+        if (deviceConnectInfoBean.deviceProtocol == 1) {
             if (value.size - 2 == len) {
                 onMrkProtocol(deviceNotifyBean, beaconParser, value.size - 5)
                 deviceDataListener?.invoke(deviceNotifyBean)
@@ -81,13 +81,13 @@ class DeviceSkippingFunction : BaseDeviceFunction() {
                     }
                 }
                 DEVICE_ZJ_MODEL_ADR -> {
-                    write(onWriteSkippingStart(), ::onDeviceCmd)
+                    write(writeSkippingStart(), ::writeDeviceCmd)
                 }
             }
         }
     }
 
     override fun onDestroyWrite(): ByteArray {
-        return if (deviceDateBean.deviceProtocol == 1) onWriteMrkStop() else onWriteZJSkippingClear()
+        return if (deviceConnectInfoBean.deviceProtocol == 1) writeMrkStop() else writeZJSkippingClear()
     }
 }

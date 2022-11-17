@@ -38,12 +38,12 @@ object BluetoothClientManager {
     /**
      * 连接回调
      */
-    private var onConnectListener: ((Boolean, String, String) -> Unit)? = null
+    private var mConnectListener: ((Boolean, String, String) -> Unit)? = null
 
     /**
      * ota 信息回调
      */
-    private var onOtaUpdateListener: ((DeviceConnectBean) -> Unit)? = null
+    private var mOtaUpdateListener: ((DeviceConnectBean) -> Unit)? = null
 
     /**
      * 设备数据订阅监听
@@ -54,14 +54,14 @@ object BluetoothClientManager {
     private var mBleConnectStatusListener: DeviceConnectStatusListener =
         DeviceConnectStatusListener()
 
-    //连接监听
-    var deviceConnectObserverBean = MutableLiveData<DeviceConnectObserverBean>()
+    //设备连接bean
+    var deviceLastConnectBean = MutableLiveData<DeviceConnectObserverBean>()
 
     //修改别名通知
     var deviceAliasBean = MutableLiveData<DeviceAliasBean>()
 
-    //保存最新连接设备详情
-    val deviceManagerMap = MutableLiveData<HashMap<String, DeviceConnectBean>?>()
+    //设备连接详情map
+    val deviceConnectMap = MutableLiveData<HashMap<String, DeviceConnectBean>?>()
 
     //心率带
     var heartDeviceFunction: DeviceHeartFunction? = null
@@ -100,13 +100,13 @@ object BluetoothClientManager {
      *@param  deviceConnectBean 连接bean
      *
      */
-    fun onDeviceConnect(
+    fun createDeviceConnect(
         deviceConnectBean: DeviceConnectBean,
         connectListener: (isConnect: Boolean, f8c4: String, modelId: String) -> Unit,
     ) {
-        onConnectListener = connectListener
+        mConnectListener = connectListener
         deviceConnectBean.run {
-            client.connect(address, connectOptions) { code, data ->
+            client.connect(address, bleConnectOptions) { code, data ->
                 if (code == Constants.REQUEST_SUCCESS) {
                     //服务跟特征值
                     bleProfile = data
@@ -114,13 +114,13 @@ object BluetoothClientManager {
                     if (array.isNotEmpty()) {
                         getZJDeviceInfo(address, array)
                     } else {
-                        onConnectListener?.invoke(true, "", "")
+                        connectListener.invoke(true, "", "")
                     }
                     client.registerConnectStatusListener(address, mBleConnectStatusListener)
                 } else {
                     writeToFile("$TAG onDeviceConnect ",
                         "$deviceName $deviceType  address: $address  $code")
-                    onConnectListener?.invoke(false, "", "")
+                    mConnectListener?.invoke(false, "", "")
                 }
             }
         }
@@ -130,7 +130,7 @@ object BluetoothClientManager {
      * 连接心率带设备
      *
      */
-    fun onDeviceHeartConnect(
+    fun createDeviceHeartConnect(
         heartMac: String,
         onConnectListener: ((isConnect: Boolean) -> Unit)? = null,
     ) {
@@ -142,11 +142,11 @@ object BluetoothClientManager {
                 onConnectListener?.invoke(false)
                 return
             }
-            client.connect(heartMac, connectOptions) { code, _ ->
+            client.connect(heartMac, bleConnectOptions) { code, _ ->
                 val isConnect = code == Constants.REQUEST_SUCCESS
                 if (isConnect) {
                     client.registerConnectStatusListener(heartMac, mBleConnectStatusListener)
-                    saveDeviceManageBean(DeviceConnectBean().apply {
+                    saveDeviceConnectBean(DeviceConnectBean().apply {
                         deviceType = DeviceConstants.D_HEART
                         address = heartMac
                         serviceUUId = string2UUID(DeviceConstants.D_SERVICE_DATA_HEART)
@@ -154,7 +154,7 @@ object BluetoothClientManager {
                     })
                 }
                 onConnectListener?.invoke(isConnect)
-                deviceConnectObserverBean.postValue(DeviceConnectObserverBean(heartMac,
+                deviceLastConnectBean.postValue(DeviceConnectObserverBean(heartMac,
                     isConnect,
                     DeviceConstants.D_HEART))
             }
@@ -164,22 +164,22 @@ object BluetoothClientManager {
     /**
      * 连接完获取最终设备配置
      */
-    fun onDeviceConfig(
+    fun initDeviceConfig(
         deviceAddBean: DeviceAddBean?,
         deviceConnectBean: DeviceConnectBean,
         otaUpdateListener: ((DeviceConnectBean) -> Unit)? = null,
     ) {
         deviceAddBean?.run {
-            onOtaUpdateListener = otaUpdateListener
+            mOtaUpdateListener = otaUpdateListener
             readOtaVersion(deviceConnectBean, eigenValue)
-            saveDeviceManageBean(deviceConnectBean.apply {
+            saveDeviceConnectBean(deviceConnectBean.apply {
                 //目前J003 LSW 用到了mtu交换
                 if (deviceName.contains("J003", true)) {
                     MtuGattCallback(address) { num -> mtu = num }
                 }
                 if (bleProfile == null)
                     return
-                serviceUUId = onServiceUUID(deviceConnectBean, communicationProtocol, bleProfile!!)
+                serviceUUId = getServiceUUID(deviceConnectBean, communicationProtocol, bleProfile!!)
                 //服务里面包含心跳就发送
                 hasHeartRate =
                     bleProfile!!.containsCharacter(string2UUID(DeviceConstants.D_SERVICE_MRK),
@@ -209,17 +209,6 @@ object BluetoothClientManager {
                         characterWrite = characterNotify
                     } else {
                         //其他类型直接根据特征值获取
-//                        for (character in bleProfile!!.getService(serviceUUId).characters) {
-//                            if (character.property and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE > 0
-//                                || character.property and BluetoothGattCharacteristic.PROPERTY_WRITE > 0
-//                            ) {
-//                                characterWrite = character.uuid
-//                            } else if (character.property and BluetoothGattCharacteristic.PROPERTY_NOTIFY > 0 ||
-//                                character.property and BluetoothGattCharacteristic.PROPERTY_INDICATE > 0
-//                            ) {
-//                                characterNotify = character.uuid
-//                            }
-//                        }`
                         bleProfile?.getService(serviceUUId)?.run {
                             characters.forEach {
                                 if (it.property and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE > 0
@@ -237,7 +226,10 @@ object BluetoothClientManager {
                 }
                 //获取到设备信息发送回调
                 isDeviceConnect = true
-                deviceConnectObserverBean.postValue(DeviceConnectObserverBean(address, true, deviceType, deviceName))
+                deviceLastConnectBean.postValue(DeviceConnectObserverBean(address,
+                    true,
+                    deviceType,
+                    deviceName))
             })
         }
     }
@@ -250,7 +242,7 @@ object BluetoothClientManager {
         deviceConnectBean: DeviceConnectBean,
         otaUpdateListener: ((DeviceConnectBean) -> Unit)? = null,
     ) {
-        onOtaUpdateListener = otaUpdateListener
+        mOtaUpdateListener = otaUpdateListener
         readOtaVersion(deviceConnectBean, eigenValue)
     }
 
@@ -292,8 +284,8 @@ object BluetoothClientManager {
             ) { _, data1 ->
                 modelNumber = DeviceConvert.bytesToAsciiString(data1)
                 if (modelNumber.isNotEmpty() && deviceConnectBean.modelRevision.isNotEmpty()) {
-                    saveDeviceManageBean(this)
-                    onOtaUpdateListener?.invoke(this)
+                    saveDeviceConnectBean(this)
+                    mOtaUpdateListener?.invoke(this)
                 }
             }
             client.read(address,
@@ -302,8 +294,8 @@ object BluetoothClientManager {
             ) { _, data1 ->
                 modelRevision = DeviceConvert.bytesToAsciiString(data1)
                 if (modelNumber.isNotEmpty() && deviceConnectBean.modelRevision.isNotEmpty()) {
-                    saveDeviceManageBean(this)
-                    onOtaUpdateListener?.invoke(this)
+                    saveDeviceConnectBean(this)
+                    mOtaUpdateListener?.invoke(this)
                 }
             }
         }
@@ -366,7 +358,7 @@ object BluetoothClientManager {
         var f8c4 = "" //智健唯一标识符
         val job = GlobalScope.launch {
             delay(10000)
-            onConnectListener?.invoke(false, "", "")
+            mConnectListener?.invoke(false, "", "")
             cancel()
         }
         client.read(mac,
@@ -375,7 +367,7 @@ object BluetoothClientManager {
             model = DeviceConvert.bytesToAsciiString(data)
             if (f8c4.isNotEmpty() && model.isNotEmpty()) {
                 job.cancel()
-                onConnectListener?.invoke(true, f8c4, model)
+                mConnectListener?.invoke(true, f8c4, model)
             }
         }
         client.read(mac,
@@ -384,7 +376,7 @@ object BluetoothClientManager {
             f8c4 = DeviceConvert.bytesToAsciiString(data)
             if (f8c4.isNotEmpty() && model.isNotEmpty()) {
                 job.cancel()
-                onConnectListener?.invoke(true, f8c4, model)
+                mConnectListener?.invoke(true, f8c4, model)
             }
         }
     }
@@ -393,85 +385,87 @@ object BluetoothClientManager {
      * 根据蓝牙名匹配
      * @param deviceName
      */
-    inline fun startSearch(
+    inline fun startBluetoothSearch(
         crossinline searchBackResult: (BluetoothDevice?, Boolean) -> Unit,
         equipNames: List<String>,
         deviceName: String? = null,
     ) {
         var toast = true
-        client.search(searchRequest,
-            object : SearchResponse {
-                override fun onSearchStarted() {}
+        client.search(bleSearchRequest, object : SearchResponse {
+            override fun onSearchStarted() {}
 
-                @SuppressLint("MissingPermission")
-                override fun onDeviceFounded(device: SearchResult) {
-                    val name = device.device.name
-                    if (name.isNullOrEmpty()) {
-                        return
-                    }
-                    if (equipNames.isEmpty()) {
-                        if (name.startsWith("HW401", true) || name.contains("HEART-B2",
-                                true) || name.contains("MERACH", true) ||
-                            name.startsWith("FS", true) || name.startsWith("TF", true) ||
-                            name.contains("CONSOLE", true) || name.contains("MRK", true) ||
-                            name.contains("HI-", true)
-                        ) {
-                            if (deviceName == null) {
-                                searchBackResult.invoke(device.device, true)
-                            } else if (device.name == deviceName) {
-                                toast = false
-                                client.stopSearch()
-                                searchBackResult.invoke(device.device, true)
-                            }
-                        }
-                    } else {
-                        if (equipNames.find { name.startsWith(it) } != null) {
-                            if (deviceName == null) {
-                                searchBackResult.invoke(device.device, true)
-                            } else if (device.name == deviceName) {
-                                toast = false
-                                client.stopSearch()
-                                searchBackResult.invoke(device.device, true)
-                            }
+            @SuppressLint("MissingPermission")
+            override fun onDeviceFounded(device: SearchResult) {
+                val name = device.device.name
+                if (name.isNullOrEmpty()) {
+                    return
+                }
+                if (equipNames.isEmpty()) {
+                    if (name.startsWith("HW401", true) || name.contains("HEART-B2",
+                            true) || name.contains("MERACH", true) ||
+                        name.startsWith("FS", true) || name.startsWith("TF", true) ||
+                        name.contains("CONSOLE", true) || name.contains("MRK", true) ||
+                        name.contains("HI-", true)
+                    ) {
+                        if (deviceName == null) {
+                            searchBackResult.invoke(device.device, true)
+                        } else if (device.name == deviceName) {
+                            toast = false
+                            client.stopSearch()
+                            searchBackResult.invoke(device.device, true)
                         }
                     }
-                    Log.d(TAG, "onDeviceFounded: ${device.rssi} ${device.device.name}")
+                } else {
+                    if (equipNames.find { name.startsWith(it) } != null) {
+                        if (deviceName == null) {
+                            searchBackResult.invoke(device.device, true)
+                        } else if (device.name == deviceName) {
+                            toast = false
+                            client.stopSearch()
+                            searchBackResult.invoke(device.device, true)
+                        }
+                    }
                 }
+                Log.d(TAG, "onDeviceFounded: ${device.rssi} ${device.device.name}")
+            }
 
-                override fun onSearchStopped() {
-                    if (toast) searchBackResult.invoke(null, false)
-                }
+            override fun onSearchStopped() {
+                if (toast) searchBackResult.invoke(null, false)
+            }
 
-                override fun onSearchCanceled() {
-                    if (toast) searchBackResult.invoke(null, false)
-                }
-            })
+            override fun onSearchCanceled() {
+                if (toast) searchBackResult.invoke(null, false)
+            }
+        })
     }
 
     /**
      *蓝牙管理
      */
-    fun saveDeviceManageBean(
+    fun saveDeviceConnectBean(
         deviceConnectBean: DeviceConnectBean,
         connectStatus: Boolean = true,
     ) {
-        var hashMap = deviceManagerMap.value
+        var hashMap = deviceConnectMap.value
         if (hashMap == null) {
             hashMap = HashMap<String, DeviceConnectBean>()
         }
         deviceConnectBean.isDeviceConnect = connectStatus
         hashMap[deviceConnectBean.deviceType] = deviceConnectBean
-        deviceManagerMap.postValue(hashMap)
+        deviceConnectMap.postValue(hashMap)
     }
 
     /**
-     *连接状态
-     *@param deviceAddress mac地址
-     * @return true 连接
+     *根据设备类型、mac 获取设备bean
+     * deviceParams  设备类型/设备mac
      */
-    fun deviceConnectBean(deviceAddress: String): DeviceConnectBean {
-        deviceManagerMap.value?.forEach {
-            if (it.value.address == deviceAddress) {
+    fun getDeviceConnectBean(
+        deviceParams: String,
+        isDeviceType: Boolean = true,
+    ): DeviceConnectBean {
+        deviceConnectMap.value?.forEach {
+            val param = if (isDeviceType) it.value.deviceType else it.value.address
+            if (param == deviceParams) {
                 return it.value
             }
         }
@@ -479,19 +473,18 @@ object BluetoothClientManager {
     }
 
     /**
-     *deviceType 设备类型
+     *根据设备类型、mac 获取连接状态
+     * true 已连接
      */
-    fun deviceConnectStatus(deviceType: String): DeviceConnectBean {
-        deviceManagerMap.value?.forEach {
-            if (it.value.deviceType == deviceType) {
-                return it.value
-            }
-        }
-        return DeviceConnectBean()
+    fun isDeviceConnect(
+        deviceParams: String,
+        isDeviceType: Boolean = true,
+    ): Boolean {
+        return getDeviceConnectBean(deviceParams, isDeviceType).isDeviceConnect
     }
 
     fun hasBindRateDevice(): Boolean {
-        deviceManagerMap.value?.forEach {
+        deviceConnectMap.value?.forEach {
             if (it.value.deviceType == DeviceConstants.D_HEART) {
                 return true
             }
@@ -502,7 +495,7 @@ object BluetoothClientManager {
     /**
      * 根据后台配置获取对应的服务跟特征值
      */
-    private fun onServiceUUID(
+    private fun getServiceUUID(
         deviceConnectBean: DeviceConnectBean,
         communicationProtocol: Int,
         profile: BleGattProfile,
@@ -551,7 +544,7 @@ object BluetoothClientManager {
     /**
      * 蓝牙连接配置
      */
-    private val connectOptions: BleConnectOptions by lazy {
+    private val bleConnectOptions: BleConnectOptions by lazy {
         BleConnectOptions.Builder().apply {
             setConnectRetry(1)   // 连接如果失败重试3次
             setConnectTimeout(5000)   // 连接超时5s
@@ -563,7 +556,7 @@ object BluetoothClientManager {
     /**
      * 蓝牙搜索配置
      */
-    val searchRequest: SearchRequest by lazy {
+    val bleSearchRequest: SearchRequest by lazy {
         SearchRequest.Builder()
             .searchBluetoothLeDevice(2000, 1) // 先扫BLE设备3次，每次3s
             .searchBluetoothClassicDevice(1000) // 再扫经典蓝牙5s
@@ -596,13 +589,13 @@ object BluetoothClientManager {
      * 解绑连接监听
      */
     fun unRegisterConnectListener() {
-        onConnectListener = null
+        mConnectListener = null
     }
 
     /**
      * 解绑ota监听
      */
     fun unRegisterOtaListener() {
-        onOtaUpdateListener = null
+        mOtaUpdateListener = null
     }
 }

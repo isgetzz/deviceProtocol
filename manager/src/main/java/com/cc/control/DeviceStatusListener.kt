@@ -2,10 +2,10 @@ package com.cc.control
 
 /**
  * 跑步状态回调
- *@property onDeviceFinish 跑步机暂停
- *@property  onDeviceSpeedCut 减速
- *@property onDeviceCountTime 倒计时
- *@property onDevicePause 暂停
+ * onDeviceFinish 跑步机暂停
+ * onDeviceSpeedCut 减速
+ * onDeviceCountTime 倒计时
+ * onDevicePause 暂停
  */
 interface DeviceStatusListener {
     fun onDeviceRunning()

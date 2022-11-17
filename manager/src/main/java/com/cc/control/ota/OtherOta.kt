@@ -8,7 +8,7 @@ import java.util.*
  * @Description :其他
  */
 class OtherOta : BaseDeviceOta() {
-    override fun onFile(filePath: String) {
+    override fun initFilePath(filePath: String) {
     }
 
     override fun onBluetoothNotify(service: UUID?, character: UUID?, value: ByteArray) {

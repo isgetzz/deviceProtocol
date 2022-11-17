@@ -60,21 +60,21 @@ fun onFFF0Protocol(
             0xB7 -> {//4401错误才处理,柏群累加和，智健异或
                 val status = beaconParser.readByte() //标识位1
                 val status2 = beaconParser.readByte() //标识位
-                writeCallBack.invoke(false, onWriteBQBicycleConnect(status, status2))
+                writeCallBack.invoke(false, writeBQBicycleConnect(status, status2))
             }
             0xB0 -> {
                 val status = beaconParser.readByte() //标识位1
                 val status2 = beaconParser.readByte() //标识位1
-                writeCallBack.invoke(false, onWriteBQBicycleStart(status, status2))
+                writeCallBack.invoke(false, writeBQBicycleStart(status, status2))
             }
             0xB5 -> {
                 val status = beaconParser.readByte() //标识位1
                 val status2 = beaconParser.readByte() //标识位1
                 val status3 = beaconParser.readByte() //标识位1
                 if (status3 == 2) { //开始
-                    writeCallBack.invoke(false, onWriteBQBicycleData(status, status2))
+                    writeCallBack.invoke(false, writeBQBicycleData(status, status2))
                 } else if (status3 == 4) { //重置完发连接A0
-                    writeCallBack.invoke(false, onWriteBQBicycleConnect())
+                    writeCallBack.invoke(false, writeBQBicycleConnect())
                 }
             }
             0xB2 -> { //柏群椭圆机、划船机
@@ -123,42 +123,42 @@ fun onFFF0Protocol(
                         ((((beaconParser.readByte() - 1) * 100 + beaconParser.readByte() - 1) / 10.0).toFloat()) //功率
                     drag = beaconParser.readByte() - 1 //阻力
                 }
-                writeCallBack.invoke(true, onWriteBQBicycleData(status1, status2))
+                writeCallBack.invoke(true, writeBQBicycleData(status1, status2))
             }
         }
     }
 }
 
-fun onWriteBQBicycleData(flag1: Int, flag2: Int): ByteArray { //柏群单车获取数据指令
+fun writeBQBicycleData(flag1: Int, flag2: Int): ByteArray { //柏群单车获取数据指令
     val cmd: String = intArrToHexString(0xF0, 0xA2, flag1, flag2)
     return ByteUtils.stringToBytes(cmd + DeviceConvert.byteSum(cmd))
 }
 
-fun onWriteBQBicycleConnect(): ByteArray { //柏群单车连接指令
+fun writeBQBicycleConnect(): ByteArray { //柏群单车连接指令
     return ByteUtils.stringToBytes(intArrToHexString(0xF0, 0xA0, 0x44, 0x01, 0xD5))
 }
 
-fun onWriteBQBicycleConnect(flag: Int, flag1: Int): ByteArray { //柏群单车连接指令, //E7划船机//C8椭圆机//01单车椭圆机
+fun writeBQBicycleConnect(flag: Int, flag1: Int): ByteArray { //柏群单车连接指令, //E7划船机//C8椭圆机//01单车椭圆机
     val cmd: String = intArrToHexString(0xF0, 0xA0, flag, flag1)
     return ByteUtils.stringToBytes(cmd + DeviceConvert.byteSum(cmd))
 }
 
-fun onWriteBQBicycleStart(flag: Int, flag1: Int): ByteArray { //柏群单车开始指令
+fun writeBQBicycleStart(flag: Int, flag1: Int): ByteArray { //柏群单车开始指令
     val cmd: String = intArrToHexString(0xF0, 0xA5, flag, flag1, 0x02)
     return ByteUtils.stringToBytes(cmd + DeviceConvert.byteSum(cmd))
 }
 
-fun onWriteBQBicycleClear(): ByteArray { //柏群单车清除数据
+fun writeBQBicycleClear(): ByteArray { //柏群单车清除数据
     val stopCmd: String = intArrToHexString(0xF0, 0xA5, 0x44, 0x01, 0x04)
     return ByteUtils.stringToBytes(stopCmd + DeviceConvert.byteSum(stopCmd))
 }
 
-fun onWriteBQBicycle5Resistance(resistance: Int): ByteArray { //柏群设置阻力K50
+fun writeBQBicycle5Resistance(resistance: Int): ByteArray { //柏群设置阻力K50
     val dragCmd = intArrToHexString(0xF0, 0xA6, 0x44, 0x01, resistance + 1)
     return ByteUtils.stringToBytes(dragCmd + DeviceConvert.byteSum(dragCmd))
 }
 
-fun onWriteBQBicycle6Resistance(resistance: Int): ByteArray {//柏群椭圆机
+fun writeBQBicycle6Resistance(resistance: Int): ByteArray {//柏群椭圆机
     val cmd = intArrToHexString(0xF0, 0xA6, 0x44, 0xE7, resistance + 1)
     return ByteUtils.stringToBytes(cmd + DeviceConvert.byteSum(cmd))
 }
@@ -166,7 +166,7 @@ fun onWriteBQBicycle6Resistance(resistance: Int): ByteArray {//柏群椭圆机
 /**
  * 筋膜枪开始指令
  */
-fun onWriteFasciaGunStart(): ByteArray {
+fun writeFasciaGunStart(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xFD, 0x10, 0x01,
         0xFD xor 0x10 xor 0x01,
         0xFE))
@@ -175,7 +175,7 @@ fun onWriteFasciaGunStart(): ByteArray {
 /**
  * 筋膜枪连接指令
  */
-fun onWriteFasciaGunConnect(): ByteArray {
+fun writeFasciaGunConnect(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(
         0xFD, 0x40,
         0x01, 0xFD xor 0x40 xor 1,
@@ -185,7 +185,7 @@ fun onWriteFasciaGunConnect(): ByteArray {
 /**
  * 筋膜枪控制档位
  */
-fun onWriteFasciaGunControl(drag: Int = 1): ByteArray {
+fun writeFasciaGunControl(drag: Int = 1): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xFD, 0x20, drag,
         0xFD xor 0x20 xor drag,
         0xFE))
@@ -194,7 +194,7 @@ fun onWriteFasciaGunControl(drag: Int = 1): ByteArray {
 /**
  * 清除数据
  */
-fun onWriteFasciaGunClear(): ByteArray {
+fun writeFasciaGunClear(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xFD, 0x10, 0x0,
         0xFD xor 0x10,
         0xFE))

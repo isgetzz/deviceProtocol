@@ -32,7 +32,7 @@ class FRKOta : BaseDeviceOta() {
     private var fileName = ""
     private var fileTotalSize = 0
 
-    override fun onFile(filePath: String) {
+    override fun initFilePath(filePath: String) {
         write(stringToBytes("010000"))
         val fileByte = filePath.readFileToByteArray()
         fileTotalSize = fileByte.size

@@ -38,7 +38,7 @@ class LSWOta : BaseDeviceOta() {
         const val D_OTA_SUCCESS_LSW = "05"//当前总包数 cmd
     }
 
-    override fun onFile(filePath: String) {
+    override fun initFilePath(filePath: String) {
         if (!filePath.isFileExist()) {
             return
         }

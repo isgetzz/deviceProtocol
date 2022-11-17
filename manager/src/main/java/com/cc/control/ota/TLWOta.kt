@@ -29,7 +29,7 @@ class TLWOta : BaseDeviceOta() {
         const val D_OTA_START_TLW = "01ff"
     }
 
-    override fun onFile(filePath: String) {
+    override fun initFilePath(filePath: String) {
         if (!filePath.isFileExist()) {
             return
         }
@@ -74,7 +74,7 @@ class TLWOta : BaseDeviceOta() {
                             otaFormat()
                         })
                 } else {
-                    write(onOTAEnd(writeTotalSize - 1), onSuccess = {
+                    write(writeOtaFinish(writeTotalSize - 1), onSuccess = {
                         deviceOtaListener?.invoke(D_OTA_SUCCESS, 100)
                     })
                     job?.cancel()

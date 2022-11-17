@@ -42,7 +42,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
     /**
      * fileName 文件路径
      */
-    abstract fun onFile(filePath: String)
+    abstract fun initFilePath(filePath: String)
 
     protected var job: Job? = null
 
@@ -213,7 +213,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
     /**
      * 结束指令
      */
-    protected fun onOTAEnd(index: Int): ByteArray {
+    protected fun writeOtaFinish(index: Int): ByteArray {
         return ByteUtils.stringToBytes("02ff" + CRC16.stringTransposition(index) + CRC16.stringTransposition(
             index.inv() and 0xffff))
     }

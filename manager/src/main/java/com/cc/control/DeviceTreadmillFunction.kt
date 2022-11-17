@@ -31,14 +31,14 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
             dateArray.add(onWriteTreadmillData())
         }
         if (readyConnect) {
-            onDeviceCmd()
+            writeDeviceCmd()
             onSuccessCallback?.invoke()
         } else {
             write(onWriteZJModelId())
             write(onWriteTreadmillStart()) {
                 write(onWriteTreadmillReady()) {
                     readyConnect = true
-                    onDeviceCmd()
+                    writeDeviceCmd()
                     onSuccessCallback?.invoke()
                 }
             }

@@ -40,7 +40,7 @@ class DFUOta : BaseDeviceOta() {
         }
     }
 
-    override fun onFile(filePath: String) {
+    override fun initFilePath(filePath: String) {
         if (dfuUri == null)
             return
         mActivity?.run {
