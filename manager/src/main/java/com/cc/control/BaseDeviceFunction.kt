@@ -25,8 +25,8 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         const val TAG = "BaseDeviceFunction"
     }
 
-    private var job: Job? = null//数据处理线程
-    private var deviceHeartJob: Job? = null//心率的线程
+    private var job: Job? = null//数据相关
+    private var deviceHeartJob: Job? = null//心率相关
     protected var dateArray: ArrayList<ByteArray> = ArrayList()//获取数据、状态array
 
     /**
