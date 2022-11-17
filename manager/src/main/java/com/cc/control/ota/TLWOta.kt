@@ -1,14 +1,11 @@
 package com.cc.control.ota
 
-import com.inuker.bluetooth.library.utils.ByteUtils
 import com.cc.control.protocol.CRC16
 import com.cc.control.protocol.CRC16.GeneralCRCFun
 import com.cc.control.protocol.dvSplitByteArr
 import com.cc.control.protocol.isFileExist
 import com.cc.control.protocol.readFileToByteArray
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import com.inuker.bluetooth.library.utils.ByteUtils
 import java.nio.ByteBuffer
 import java.util.*
 
@@ -44,42 +41,34 @@ class TLWOta : BaseDeviceOta() {
 
     private fun otaFormat() {
         if (isFinish) {
-            job?.cancel()
-            job = null
             return
         }
-        job = GlobalScope.launch(context = Dispatchers.IO) {
-            writeByteArrayList.let {
-                //如果是最后一包则要把长度写进去 最后一把的数据长度写进去
-                job?.cancel()
-                job = null
-                if (writePosition < writeTotalSize) {
-                    writeBuffer.clear()
-                    writeBuffer.putShort(CRC16.shortTransposition(writePosition))
-                    writeBuffer.put(writeByteArrayList[writePosition])
-                    //最后一包不足包长补齐
-                    if (writePosition == writeTotalSize - 1) {
-                        for (index in writeByteArrayList[writePosition].size until 16) {
-                            writeBuffer.put(0xFF.toByte())
-                        }
+        writeByteArrayList.let {
+            //如果是最后一包则要把长度写进去 最后一把的数据长度写进去
+            if (writePosition < writeTotalSize) {
+                writeBuffer.clear()
+                writeBuffer.putShort(CRC16.shortTransposition(writePosition))
+                writeBuffer.put(writeByteArrayList[writePosition])
+                //最后一包不足包长补齐
+                if (writePosition == writeTotalSize - 1) {
+                    for (index in writeByteArrayList[writePosition].size until 16) {
+                        writeBuffer.put(0xFF.toByte())
                     }
-                    //校验码
-                    writeBuffer.putShort(GeneralCRCFun(writeBuffer, 18))
-                    writeNoRsp(
-                        writeBuffer.array(),
-                        writeTotalSize,
-                        writePosition,
-                        onSuccess = {
-                            writePosition++
-                            otaFormat()
-                        })
-                } else {
-                    write(writeOtaFinish(writeTotalSize - 1), onSuccess = {
-                        deviceOtaListener?.invoke(D_OTA_SUCCESS, 100)
-                    })
-                    job?.cancel()
-                    job = null
                 }
+                //校验码
+                writeBuffer.putShort(GeneralCRCFun(writeBuffer, 18))
+                writeNoRsp(
+                    writeBuffer.array(),
+                    writeTotalSize,
+                    writePosition,
+                    onSuccess = {
+                        writePosition++
+                        otaFormat()
+                    })
+            } else {
+                write(writeOtaFinish(writeTotalSize - 1), onSuccess = {
+                    deviceOtaListener?.invoke(D_OTA_SUCCESS, 100)
+                })
             }
         }
 

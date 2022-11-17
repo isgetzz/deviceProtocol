@@ -6,9 +6,6 @@ import com.cc.control.protocol.dvSplitByteArrEndSeamProtection
 import com.cc.control.protocol.isFileExist
 import com.cc.control.protocol.readFileToByteArray
 import com.inuker.bluetooth.library.Code
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.util.*
 
@@ -45,28 +42,22 @@ class BTOta : BaseDeviceOta() {
     }
 
     private fun otaFormat() {
-        job?.cancel()
-        job = null
         if (!isFinish) {
-            job = GlobalScope.launch(context = Dispatchers.IO) {
-                writeByteArrayList.let {
-                    if (writePosition < writeTotalSize) {
-                        dataWriteBuffer.clear()
-                        dataWriteBuffer.putShort(CRC16.shortTransposition(writePosition))
-                        dataWriteBuffer.put(writeByteArrayList[writePosition])
-                        writeNoRsp(
-                            dataWriteBuffer.array(),
-                            writeTotalSize,
-                            writePosition,
-                            onSuccess = {
-                                writePosition++
-                                otaFormat()
-                            })
-                    } else {
-                        deviceOtaListener?.invoke(D_OTA_SUCCESS, 100)
-                        job?.cancel()
-                        job = null
-                    }
+            writeByteArrayList.let {
+                if (writePosition < writeTotalSize) {
+                    dataWriteBuffer.clear()
+                    dataWriteBuffer.putShort(CRC16.shortTransposition(writePosition))
+                    dataWriteBuffer.put(writeByteArrayList[writePosition])
+                    writeNoRsp(
+                        dataWriteBuffer.array(),
+                        writeTotalSize,
+                        writePosition,
+                        onSuccess = {
+                            writePosition++
+                            otaFormat()
+                        })
+                } else {
+                    deviceOtaListener?.invoke(D_OTA_SUCCESS, 100)
                 }
             }
         }

@@ -43,9 +43,6 @@ abstract class BaseDeviceOta : LifecycleObserver {
      * fileName 文件路径
      */
     abstract fun initFilePath(filePath: String)
-
-    protected var job: Job? = null
-
     /**
      * 结束标识
      */
@@ -199,8 +196,6 @@ abstract class BaseDeviceOta : LifecycleObserver {
         }
         deviceOtaListener = null
         isFinish = true
-        job?.cancel()
-        job = null
     }
 
     /**
