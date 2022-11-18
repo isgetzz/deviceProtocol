@@ -1,6 +1,5 @@
 package com.cc.control
 
-import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.cc.control.bean.DeviceConnectBean
@@ -99,6 +98,11 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
     }
 
     /**
+     * 设备类型
+     */
+    private var deviceType = ""
+
+    /**
      * 开始连接并获取数据
      */
     open fun create(
@@ -106,14 +110,40 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
         dataListener: ((DeviceTrainBean.DeviceTrainBO) -> Unit),
         statusListener: DeviceStatusListener? = null,
     ) {
-        deviceConnectInfoBean = BluetoothClientManager.getDeviceConnectBean(deviceType)
+        this.deviceType = deviceType
         deviceDataListener = dataListener
         deviceStatusListener = statusListener
-        notifyRegister()
-        if (!deviceConnectInfoBean.deviceName.contains("Merach-MR636D")) {
-            onDeviceWrite(true)
+        initDevice()
+    }
+
+    /**
+     * 初始化读写跟数据监听
+     * 第一次初始化设备连接才赋值，避免后续回调异常
+     * isFirst true 初始状态 false 蓝牙状态改变回调
+     */
+    private fun initDevice(isFirst: Boolean = true) {
+        val connectBean = BluetoothClientManager.getDeviceConnectBean(deviceType)
+        if (connectBean.isDeviceConnect) {
+            deviceConnectInfoBean = connectBean
+            notifyRegister()
+            if (!deviceConnectInfoBean.deviceName.contains("Merach-MR636D")) {
+                onDeviceWrite(true)
+            }
+            writeDeviceHeart()
+        } else {
+            deviceConnectInfoBean.isDeviceConnect = false
         }
-        writeDeviceHeart()
+        deviceStatusListener?.onDeviceConnectStatus(deviceConnectInfoBean.isDeviceConnect, isFirst)
+    }
+
+    override fun onCreate(owner: LifecycleOwner) {
+        BluetoothClientManager.deviceLastConnectBean.observe(owner) {
+            //已连接进入用mac地址判断  未连接进入连接完成再初始化。
+            if (it.deviceAddress == deviceConnectInfoBean.address || (deviceConnectInfoBean.address.isNotEmpty() && deviceConnectInfoBean.isDeviceConnect)) {
+                initDevice(false)
+            }
+        }
+        super.onCreate(owner)
     }
 
     /**
@@ -326,12 +356,6 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
         this.deviceDataListener = dataListener
     }
 
-    override fun onCreate(owner: LifecycleOwner) {
-        BluetoothClientManager.deviceLastConnectBean.observe(owner) {
-            Log.d(TAG, "onCreate: ${deviceConnectInfoBean.deviceName} ${it.deviceName}")
-        }
-        super.onCreate(owner)
-    }
 
     /**
      * 训练结束，回调接口置空防止持有activity引用内存泄漏

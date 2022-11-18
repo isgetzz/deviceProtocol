@@ -6,8 +6,11 @@ package com.cc.control
  * onDeviceSpeedCut 减速
  * onDeviceCountTime 倒计时
  * onDevicePause 暂停
+ * onDeviceConnectStatus 设备状态
  */
 interface DeviceStatusListener {
+    fun onDeviceConnectStatus(isConnect: Boolean, isFirst: Boolean)
+
     fun onDeviceRunning()
 
     fun onDevicePause()
@@ -17,4 +20,5 @@ interface DeviceStatusListener {
     fun onDeviceFinish()
 
     fun onDeviceCountTime(time: Int)
+
 }
