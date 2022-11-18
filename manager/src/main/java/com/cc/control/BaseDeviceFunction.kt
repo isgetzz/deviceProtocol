@@ -1,7 +1,8 @@
 package com.cc.control
 
 import android.util.Log
-import androidx.lifecycle.*
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.cc.control.bean.DeviceConnectBean
 import com.cc.control.bean.DeviceNotifyBean
 import com.cc.control.bean.DeviceTrainBean
@@ -19,7 +20,7 @@ import java.util.*
  * desc    : 设备数据类
  * time    : 2022/2/15
  */
-abstract class BaseDeviceFunction : LifecycleObserver, LifecycleOwner {
+abstract class BaseDeviceFunction : DefaultLifecycleObserver {
     companion object {
         const val TAG = "BaseDeviceFunction"
     }
@@ -113,9 +114,6 @@ abstract class BaseDeviceFunction : LifecycleObserver, LifecycleOwner {
             onDeviceWrite(true)
         }
         writeDeviceHeart()
-        BluetoothClientManager.deviceLastConnectBean.observe(this) {
-            Log.d(TAG, "create: ${it.deviceAddress} ${it.deviceName}")
-        }
     }
 
     /**
@@ -328,15 +326,17 @@ abstract class BaseDeviceFunction : LifecycleObserver, LifecycleOwner {
         this.deviceDataListener = dataListener
     }
 
-    override fun getLifecycle(): Lifecycle {
-        return LifecycleRegistry(this)
+    override fun onCreate(owner: LifecycleOwner) {
+        BluetoothClientManager.deviceLastConnectBean.observe(owner) {
+            Log.d(TAG, "onCreate: ${deviceConnectInfoBean.deviceName} ${it.deviceName}")
+        }
+        super.onCreate(owner)
     }
 
     /**
      * 训练结束，回调接口置空防止持有activity引用内存泄漏
      */
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
+    override fun onDestroy(owner: LifecycleOwner) {
         job?.cancel()
         job = null
         deviceHeartJob?.cancel()
@@ -353,5 +353,6 @@ abstract class BaseDeviceFunction : LifecycleObserver, LifecycleOwner {
         refreshData = false
         deviceDataListener = null
         deviceStatusListener = null
+        super.onDestroy(owner)
     }
 }

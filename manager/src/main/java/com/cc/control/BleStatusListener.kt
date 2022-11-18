@@ -9,7 +9,7 @@ import com.inuker.bluetooth.library.connect.listener.BleConnectStatusListener
  * on 2022-07-22 14:51.
  * 断开回调，如果连接的话需要先获取完后台配置才成功
  */
-class DeviceConnectStatusListener : BleConnectStatusListener() {
+class BleStatusListener : BleConnectStatusListener() {
     private val deviceConnectObserverBean = DeviceConnectObserverBean()
     override fun onConnectStatusChanged(mac: String, status: Int) {
         if (status != Constants.STATUS_CONNECTED) {

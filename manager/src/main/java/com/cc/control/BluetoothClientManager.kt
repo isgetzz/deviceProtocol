@@ -51,15 +51,15 @@ object BluetoothClientManager {
     var deviceNotify = MutableLiveData<DeviceNotifyBean>()
 
     // 蓝牙状态监听
-    private var mBleConnectStatusListener: DeviceConnectStatusListener = DeviceConnectStatusListener()
+    private var mBleStatusListener: BleStatusListener = BleStatusListener()
 
-    //设备连接bean
+    //蓝牙设备状态回调，实时通知，deviceAddress 判断设备唯一性
     var deviceLastConnectBean = MutableLiveData<DeviceConnectObserverBean>()
 
     //修改别名通知
     var deviceAliasBean = MutableLiveData<DeviceAliasBean>()
 
-    //设备连接详情map
+    //设备连接详情集合,连接中、历史连接记录
     val deviceConnectMap = MutableLiveData<HashMap<String, DeviceConnectBean>?>()
 
     //心率带
@@ -67,7 +67,9 @@ object BluetoothClientManager {
 
     //app 实例化
     internal lateinit var app: Application
-    var isShowLog = false//是否打印日志
+
+    //是否打印日志
+    var isShowLog = false
 
     /**
      * 必须先初始化不然无法引用context
@@ -115,7 +117,7 @@ object BluetoothClientManager {
                     } else {
                         connectListener.invoke(true, "", "")
                     }
-                    client.registerConnectStatusListener(address, mBleConnectStatusListener)
+                    client.registerConnectStatusListener(address, mBleStatusListener)
                 } else {
                     writeToFile("$TAG onDeviceConnect ",
                         "$deviceName $deviceType  address: $address  $code")
@@ -144,7 +146,7 @@ object BluetoothClientManager {
             client.connect(heartMac, bleConnectOptions) { code, _ ->
                 val isConnect = code == Constants.REQUEST_SUCCESS
                 if (isConnect) {
-                    client.registerConnectStatusListener(heartMac, mBleConnectStatusListener)
+                    client.registerConnectStatusListener(heartMac, mBleStatusListener)
                     saveDeviceConnectBean(DeviceConnectBean().apply {
                         deviceType = DeviceConstants.D_HEART
                         address = heartMac
