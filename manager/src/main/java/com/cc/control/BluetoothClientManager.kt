@@ -51,8 +51,7 @@ object BluetoothClientManager {
     var deviceNotify = MutableLiveData<DeviceNotifyBean>()
 
     // 蓝牙状态监听
-    private var mBleConnectStatusListener: DeviceConnectStatusListener =
-        DeviceConnectStatusListener()
+    private var mBleConnectStatusListener: DeviceConnectStatusListener = DeviceConnectStatusListener()
 
     //设备连接bean
     var deviceLastConnectBean = MutableLiveData<DeviceConnectObserverBean>()

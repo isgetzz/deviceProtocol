@@ -1,8 +1,7 @@
 package com.cc.control
 
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
+import android.util.Log
+import androidx.lifecycle.*
 import com.cc.control.bean.DeviceConnectBean
 import com.cc.control.bean.DeviceNotifyBean
 import com.cc.control.bean.DeviceTrainBean
@@ -20,7 +19,7 @@ import java.util.*
  * desc    : 设备数据类
  * time    : 2022/2/15
  */
-abstract class BaseDeviceFunction : LifecycleObserver {
+abstract class BaseDeviceFunction : LifecycleObserver, LifecycleOwner {
     companion object {
         const val TAG = "BaseDeviceFunction"
     }
@@ -114,6 +113,9 @@ abstract class BaseDeviceFunction : LifecycleObserver {
             onDeviceWrite(true)
         }
         writeDeviceHeart()
+        BluetoothClientManager.deviceLastConnectBean.observe(this) {
+            Log.d(TAG, "create: ${it.deviceAddress} ${it.deviceName}")
+        }
     }
 
     /**
@@ -324,6 +326,10 @@ abstract class BaseDeviceFunction : LifecycleObserver {
      */
     open fun registerDataListener(dataListener: ((DeviceTrainBean.DeviceTrainBO) -> Unit)) {
         this.deviceDataListener = dataListener
+    }
+
+    override fun getLifecycle(): Lifecycle {
+        return LifecycleRegistry(this)
     }
 
     /**
