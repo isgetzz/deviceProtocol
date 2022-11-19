@@ -15,8 +15,8 @@ import kotlinx.coroutines.*
 import java.util.*
 
 /**
- * author : cc
- * desc    : 设备数据类
+ * author  : cc
+ * desc    : 蓝牙设备处理
  * time    : 2022/2/15
  */
 abstract class BaseDeviceFunction : DefaultLifecycleObserver {
