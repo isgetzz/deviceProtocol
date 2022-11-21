@@ -51,7 +51,7 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
     /**
      *根据设备类型获取当前设备信息`
      */
-    open var deviceConnectInfoBean: DeviceConnectBean = DeviceConnectBean()
+    protected var deviceConnectInfoBean: DeviceConnectBean = DeviceConnectBean()
 
     /**
      *设备状态回调
@@ -104,13 +104,17 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
 
     /**
      * 开始连接并获取数据
+     * @param oneDeviceType 设备大类
+     * @param dataListener 数据回调
+     * @param statusListener 设备状态回调
+     *
      */
     open fun create(
-        deviceType: String = "",
+        oneDeviceType: String = "",
         dataListener: ((DeviceTrainBean.DeviceTrainBO) -> Unit),
         statusListener: DeviceStatusListener? = null,
     ) {
-        this.deviceType = deviceType
+        deviceType = oneDeviceType
         deviceDataListener = dataListener
         deviceStatusListener = statusListener
         initDevice()
@@ -119,21 +123,22 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
     /**
      * 初始化读写跟数据监听
      * 第一次初始化设备连接才赋值，避免后续回调异常
-     * isFirst true 初始状态 false 蓝牙状态改变回调
+     * isFirstConnectInit true 初始状态 false 首次连接初始化
      */
-    private fun initDevice(isFirst: Boolean = true) {
-        val connectBean = BluetoothClientManager.getDeviceConnectBean(deviceType)
-        if (connectBean.isDeviceConnect) {
-            deviceConnectInfoBean = connectBean
-            notifyRegister()
-            if (!deviceConnectInfoBean.deviceName.contains("Merach-MR636D")) {
+    private fun initDevice(isFirstConnectInit: Boolean = true) {
+        BluetoothClientManager.getDeviceConnectBean(deviceType).run {
+            if (isDeviceConnect) {
+                deviceConnectInfoBean = this
+                notifyRegister()
                 onDeviceWrite(true)
+                writeDeviceHeart()
+            } else {
+                deviceConnectInfoBean.isDeviceConnect = false
             }
-            writeDeviceHeart()
-        } else {
-            deviceConnectInfoBean.isDeviceConnect = false
+            deviceStatusListener?.onDeviceConnectStatus(deviceName,
+                isDeviceConnect,
+                isFirstConnectInit)
         }
-        deviceStatusListener?.onDeviceConnectStatus(deviceConnectInfoBean.isDeviceConnect, isFirst)
     }
 
     override fun onCreate(owner: LifecycleOwner) {

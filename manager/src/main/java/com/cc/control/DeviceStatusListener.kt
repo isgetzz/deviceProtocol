@@ -9,7 +9,7 @@ package com.cc.control
  * onDeviceConnectStatus 设备状态
  */
 interface DeviceStatusListener {
-    fun onDeviceConnectStatus(isConnect: Boolean, isFirst: Boolean)
+    fun onDeviceConnectStatus(deviceName: String, isConnect: Boolean, isFirst: Boolean)
 
     fun onDeviceRunning()
 

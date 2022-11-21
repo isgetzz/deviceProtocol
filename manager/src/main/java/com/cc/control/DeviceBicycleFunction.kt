@@ -20,6 +20,10 @@ import kotlin.experimental.and
  */
 class DeviceBicycleFunction : BaseDeviceFunction() {
     override fun onDeviceWrite(isCreate: Boolean) {
+        //2022-11 立聪确认 初始化Merach-MR636D不做操作,根据设备当前状态来发送指令
+        if (deviceConnectInfoBean.deviceName.contains("Merach-MR636D") && isCreate) {
+            return
+        }
         when (deviceConnectInfoBean.deviceProtocol) {
             DeviceConstants.D_SERVICE_TYPE_ZJ -> {
                 if (dateArray.isEmpty()) {
