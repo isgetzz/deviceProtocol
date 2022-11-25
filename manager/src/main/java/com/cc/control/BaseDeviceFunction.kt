@@ -289,6 +289,8 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
      */
     open fun writeDeviceHeart() {
         if (deviceConnectInfoBean.hasHeartRate) {
+            deviceHeartJob?.cancel()
+            deviceHeartJob = null
             deviceHeartJob = GlobalScope.launch(Dispatchers.IO) {
                 BluetoothClientManager.client.write(
                     deviceConnectInfoBean.address,
