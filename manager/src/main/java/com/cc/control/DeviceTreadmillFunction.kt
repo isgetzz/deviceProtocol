@@ -2,15 +2,12 @@ package com.cc.control
 
 import com.cc.control.protocol.*
 import com.inuker.bluetooth.library.beacon.BeaconParser
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.util.*
 
 /**
- * @Author      : cc
- * @Date        : on 2022-02-18 18:38.
- * @Description : 智健跑步机 x5、x3、x1、马克龙
+ * Author      : cc
+ * Date        : on 2022-02-18 18:38.
+ * Description : 智健跑步机 x5、x3、x1、马克龙
  */
 open class DeviceTreadmillFunction : BaseDeviceFunction() {
     /**
@@ -31,14 +28,14 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
             dateArray.add(writeTreadmillData())
         }
         if (readyConnect) {
-            writeDeviceCmd()
+            writeData()
             onSuccessCallback?.invoke()
         } else {
             write(readZJModelId())
             write(writeTreadmillStart()) {
                 write(writeTreadmillReady()) {
                     readyConnect = true
-                    writeDeviceCmd()
+                    writeData()
                     onSuccessCallback?.invoke()
                 }
             }
@@ -54,18 +51,10 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
         resistance: Int,
         slope: Int,
     ) {
-        writeToFile(TAG, "onWriteStart 清除其他指令:跑步机 控制延时 $speed $resistance $slope $readyConnect")
-        clearAllRequest()
-        GlobalScope.launch {
-            writeData = false
-            delay(300)
-            onWriteStart {
-                write(writeTreadmillControl(speed, slope))
-                writeToFile(TAG, "onWriteStart 成功:跑步机 控制延时 $speed $resistance $slope")
-                //  writeData = true
-            }
-            delay(300)
-            writeData = true
+        writeToFile(TAG,
+            "onDeviceControl ${deviceConnectInfoBean.deviceName} $speed $resistance $slope $readyConnect")
+        onWriteStart {
+            deviceControlDelayed(writeTreadmillControl(speed, slope))
         }
     }
 

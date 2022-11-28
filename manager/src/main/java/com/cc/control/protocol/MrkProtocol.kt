@@ -18,12 +18,9 @@ fun onMrkProtocol(
 ) {
     var position = 0
     beaconParser.setPosition(3)
-    val stringBuffer = StringBuffer()
     deviceNotifyBean.run {
         while (position < endPosition) {
-            val cmd = beaconParser.readByte()
-            stringBuffer.append("$cmd,")
-            when (cmd) {
+            when (beaconParser.readByte()) {
                 0 -> {//电量
                     electric = beaconParser.readByte()
                     position += 2

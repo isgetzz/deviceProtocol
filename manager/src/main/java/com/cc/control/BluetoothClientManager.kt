@@ -21,10 +21,6 @@ import com.inuker.bluetooth.library.model.BleGattProfile
 import com.inuker.bluetooth.library.search.SearchRequest
 import com.inuker.bluetooth.library.search.SearchResult
 import com.inuker.bluetooth.library.search.response.SearchResponse
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.util.*
 
 /**
@@ -48,34 +44,43 @@ object BluetoothClientManager {
     /**
      * 设备数据订阅监听
      */
-    var deviceNotify = MutableLiveData<DeviceNotifyBean>()
+    var deviceHeartConnectBean = MutableLiveData<DeviceHeartConnectBean>()
 
-    // 蓝牙状态监听
+    /**
+     * 蓝牙状态监听
+     */
     private var mBleStatusListener: BleStatusListener = BleStatusListener()
 
-    //蓝牙设备状态回调，实时通知，deviceAddress 判断设备唯一性
+    /**
+     * 蓝牙设备状态回调，实时通知，deviceAddress 判断设备唯一性
+     */
     var deviceLastConnectBean = MutableLiveData<DeviceConnectObserverBean>()
+
+    /**
+     * 设备连接详情集合,连接中、历史连接记录
+     */
+    val deviceConnectMap = MutableLiveData<HashMap<String, DeviceConnectBean>?>()
 
     //修改别名通知
     var deviceAliasBean = MutableLiveData<DeviceAliasBean>()
 
-    //设备连接详情集合,连接中、历史连接记录
-    val deviceConnectMap = MutableLiveData<HashMap<String, DeviceConnectBean>?>()
-
-    //心率带
+    /**
+     *心率带
+     */
     var heartDeviceFunction: DeviceHeartFunction? = null
 
-    //app 实例化
-    internal lateinit var app: Application
+    lateinit var mApplication: Application
 
-    //是否打印日志
+    /**
+     * 是否打印日志
+     */
     var isShowLog = false
 
     /**
      * 必须先初始化不然无法引用context
      */
     fun initDeviceManager(app: Application, showLog: Boolean = false) {
-        this.app = app
+        mApplication = app
         isShowLog = showLog
     }
 
@@ -87,7 +92,7 @@ object BluetoothClientManager {
             if (mClient == null) {
                 synchronized(BluetoothClientManager::class.java) {
                     if (mClient == null) {
-                        mClient = BluetoothClient(app)
+                        mClient = BluetoothClient(mApplication)
                     }
                 }
             }
@@ -98,29 +103,26 @@ object BluetoothClientManager {
      * 连接设备
      * 连接成功才注册回调防止测试设备太多导致注册太多回调
      * 首台连接设备需要手动发送设备状态刷新,注册完之后自动监听状态
-     *@param  deviceConnectBean 连接bean
-     *
+     * deviceConnectBean 设备属性相关数据
      */
-    fun createDeviceConnect(
+    fun createConnect(
         deviceConnectBean: DeviceConnectBean,
-        connectListener: (isConnect: Boolean, f8c4: String, modelId: String) -> Unit,
+        connectListener: (isConnect: Boolean, modelAdr: String, modelId: String) -> Unit,
     ) {
         mConnectListener = connectListener
         deviceConnectBean.run {
             client.connect(address, bleConnectOptions) { code, data ->
                 if (code == Constants.REQUEST_SUCCESS) {
-                    //服务跟特征值
                     bleProfile = data
                     val array = data.getUUIdFromString("f8c0", "f8c4")
                     if (array.isNotEmpty()) {
-                        getZJDeviceInfo(address, array)
+                        getDeviceModelInfo(address, array)
                     } else {
-                        connectListener.invoke(true, "", "")
+                        mConnectListener?.invoke(true, "", "")
                     }
                     client.registerConnectStatusListener(address, mBleStatusListener)
                 } else {
-                    writeToFile("$TAG onDeviceConnect ",
-                        "$deviceName $deviceType  address: $address  $code")
+                    writeToFile("$TAG onDeviceConnect ", "$deviceName $deviceType $address  $code")
                     mConnectListener?.invoke(false, "", "")
                 }
             }
@@ -129,9 +131,8 @@ object BluetoothClientManager {
 
     /**
      * 连接心率带设备
-     *
      */
-    fun createDeviceHeartConnect(
+    fun createHeartConnect(
         heartMac: String,
         onConnectListener: ((isConnect: Boolean) -> Unit)? = null,
     ) {
@@ -163,14 +164,17 @@ object BluetoothClientManager {
     }
 
     /**
-     * 连接完获取最终设备配置
+     * 连接完获取设备配置
+     * eigenValue 读取版本的标识 1 2A26 其他 2A28
+     * deviceProtocol 协议类型
      */
     fun initDeviceConfig(
-        deviceAddBean: DeviceAddBean?,
+        eigenValue: Int,
+        deviceProtocol: Int,
         deviceConnectBean: DeviceConnectBean,
         otaUpdateListener: ((DeviceConnectBean) -> Unit)? = null,
     ) {
-        deviceAddBean?.run {
+        if (deviceConnectBean.bleProfile != null) {
             mOtaUpdateListener = otaUpdateListener
             readOtaVersion(deviceConnectBean, eigenValue)
             saveDeviceConnectBean(deviceConnectBean.apply {
@@ -178,9 +182,7 @@ object BluetoothClientManager {
                 if (deviceName.contains("J003", true)) {
                     MtuGattCallback(address) { num -> mtu = num }
                 }
-                if (bleProfile == null)
-                    return
-                serviceUUId = getServiceUUID(deviceConnectBean, communicationProtocol, bleProfile!!)
+                serviceUUId = getServiceUUID(deviceConnectBean, deviceProtocol, bleProfile!!)
                 //服务里面包含心跳就发送
                 hasHeartRate =
                     bleProfile!!.containsCharacter(string2UUID(DeviceConstants.D_SERVICE_MRK),
@@ -196,12 +198,10 @@ object BluetoothClientManager {
                                 characterNotify = string2UUID(DeviceConstants.D_SERVICE1826_2AD1)
                             }
                             DeviceConstants.D_BICYCLE -> {
-                                characterNotify =
-                                    string2UUID(DeviceConstants.D_SERVICE1826_2AD2)
+                                characterNotify = string2UUID(DeviceConstants.D_SERVICE1826_2AD2)
                             }
                             DeviceConstants.D_TECHNOGYM -> {
-                                characterNotify =
-                                    string2UUID(DeviceConstants.D_SERVICE1826_2ACE)
+                                characterNotify = string2UUID(DeviceConstants.D_SERVICE1826_2ACE)
                             }
                         }
                         characterWrite = string2UUID(DeviceConstants.D_SERVICE1826_2AD9)
@@ -210,7 +210,7 @@ object BluetoothClientManager {
                         characterWrite = characterNotify
                     } else {
                         //其他类型直接根据特征值获取
-                        bleProfile?.getService(serviceUUId)?.run {
+                        bleProfile!!.getService(serviceUUId)?.run {
                             characters.forEach {
                                 if (it.property and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE > 0
                                     || it.property and BluetoothGattCharacteristic.PROPERTY_WRITE > 0
@@ -303,9 +303,9 @@ object BluetoothClientManager {
     }
 
     /**
-     * 根据协议类型获取服务
+     * 根据后台配置获取ota服务特征值
      */
-    fun getOtaType(deviceConnectBean: DeviceConnectBean, otaType: Int) {
+    fun getOtaService(deviceConnectBean: DeviceConnectBean, otaType: Int) {
         deviceConnectBean.run {
             deviceOtaType = otaType
             when (otaType) {
@@ -350,41 +350,33 @@ object BluetoothClientManager {
     }
 
     /**
-     * 获取智健的设备modelId 跟
-     * @param mac       mac地址
-     * @explain 延时10s没有读取返回false防止一直等待
+     *获取设备模块信息
+     *目前只读取智健服务 f8c0、f8c4
      */
-    private fun getZJDeviceInfo(mac: String, arrays: Array<UUID>) {
-        var model = ""//modelId
-        var f8c4 = "" //智健唯一标识符
-        val job = GlobalScope.launch {
-            delay(10000)
-            mConnectListener?.invoke(false, "", "")
-            cancel()
-        }
+    private fun getDeviceModelInfo(mac: String, arrays: Array<UUID>) {
+        var modelId = ""
+        var modelAdr = ""
         client.read(mac,
             string2UUID(DeviceConstants.D_EQUIPMENT_INFORMATION),
             string2UUID(DeviceConstants.D_CHARACTER_2A24)) { _: Int, data: ByteArray ->
-            model = DeviceConvert.bytesToAsciiString(data)
-            if (f8c4.isNotEmpty() && model.isNotEmpty()) {
-                job.cancel()
-                mConnectListener?.invoke(true, f8c4, model)
+            modelId = DeviceConvert.bytesToAsciiString(data)
+            if (modelAdr.isNotEmpty() && modelId.isNotEmpty()) {
+                mConnectListener?.invoke(true, modelAdr, modelId)
             }
         }
         client.read(mac,
             arrays[0],
             arrays[1]) { _: Int, data: ByteArray ->
-            f8c4 = DeviceConvert.bytesToAsciiString(data)
-            if (f8c4.isNotEmpty() && model.isNotEmpty()) {
-                job.cancel()
-                mConnectListener?.invoke(true, f8c4, model)
+            modelAdr = DeviceConvert.bytesToAsciiString(data)
+            if (modelAdr.isNotEmpty() && modelId.isNotEmpty()) {
+                mConnectListener?.invoke(true, modelAdr, modelId)
             }
         }
     }
 
     /**
      * 根据蓝牙名匹配
-     * @param deviceName
+     * deviceName 指定单个设备名称
      */
     inline fun startBluetoothSearch(
         crossinline searchBackResult: (BluetoothDevice?, Boolean) -> Unit,
@@ -441,7 +433,7 @@ object BluetoothClientManager {
     }
 
     /**
-     *蓝牙管理
+     *更新连接的蓝牙数据
      */
     fun saveDeviceConnectBean(
         deviceConnectBean: DeviceConnectBean,
@@ -483,16 +475,6 @@ object BluetoothClientManager {
     ): Boolean {
         return getDeviceConnectBean(deviceParams, isDeviceType).isDeviceConnect
     }
-
-    fun hasBindRateDevice(): Boolean {
-        deviceConnectMap.value?.forEach {
-            if (it.value.deviceType == DeviceConstants.D_HEART) {
-                return true
-            }
-        }
-        return false
-    }
-
     /**
      * 根据后台配置获取对应的服务跟特征值
      */
@@ -543,29 +525,6 @@ object BluetoothClientManager {
     }
 
     /**
-     * 蓝牙连接配置
-     */
-    private val bleConnectOptions: BleConnectOptions by lazy {
-        BleConnectOptions.Builder().apply {
-            setConnectRetry(1)   // 连接如果失败重试3次
-            setConnectTimeout(5000)   // 连接超时5s
-            setServiceDiscoverRetry(1)  // 发现服务如果失败重试3次
-            setServiceDiscoverTimeout(5000)  // 发现服务超时5s
-        }.build()
-    }
-
-    /**
-     * 蓝牙搜索配置
-     */
-    val bleSearchRequest: SearchRequest by lazy {
-        SearchRequest.Builder()
-            .searchBluetoothLeDevice(2000, 1) // 先扫BLE设备3次，每次3s
-            .searchBluetoothClassicDevice(1000) // 再扫经典蓝牙5s
-            .searchBluetoothLeDevice(2000) // 再扫BLE设备2s
-            .build()
-    }
-
-    /**
      *true开启蓝牙
      */
     fun isBluetoothOpened(): Boolean {
@@ -598,5 +557,27 @@ object BluetoothClientManager {
      */
     fun unRegisterOtaListener() {
         mOtaUpdateListener = null
+    }
+    /**
+     * 蓝牙连接配置
+     */
+    private val bleConnectOptions: BleConnectOptions by lazy {
+        BleConnectOptions.Builder().apply {
+            setConnectRetry(1)   // 连接如果失败重试3次
+            setConnectTimeout(5000)   // 连接超时5s
+            setServiceDiscoverRetry(1)  // 发现服务如果失败重试3次
+            setServiceDiscoverTimeout(5000)  // 发现服务超时5s
+        }.build()
+    }
+
+    /**
+     * 蓝牙搜索配置
+     */
+    val bleSearchRequest: SearchRequest by lazy {
+        SearchRequest.Builder()
+            .searchBluetoothLeDevice(2000, 1) // 先扫BLE设备3次，每次3s
+            .searchBluetoothClassicDevice(1000) // 再扫经典蓝牙5s
+            .searchBluetoothLeDevice(2000) // 再扫BLE设备2s
+            .build()
     }
 }

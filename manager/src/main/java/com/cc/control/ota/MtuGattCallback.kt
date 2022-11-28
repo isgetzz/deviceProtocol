@@ -1,5 +1,6 @@
 package com.cc.control.ota
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
@@ -15,6 +16,7 @@ import com.cc.control.protocol.DeviceConstants.D_MTU_LENGTH
  * @Date        : on 2022-04-08 15:43
  * @Description : mtu 设置回调
  */
+@SuppressLint("MissingPermission")
 class MtuGattCallback(
     address: String,
     private val mtuBackListener: (Int) -> Unit,
@@ -23,20 +25,20 @@ class MtuGattCallback(
         val bluetoothDevice = BluetoothUtils.getRemoteDevice(address)
         when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
-                bluetoothDevice.connectGatt(BluetoothClientManager.app,
+                bluetoothDevice.connectGatt(BluetoothClientManager.mApplication,
                     false,
                     this,
                     BluetoothDevice.TRANSPORT_LE,
                     BluetoothDevice.PHY_LE_1M_MASK)
             }
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
-                bluetoothDevice.connectGatt(BluetoothClientManager.app,
+                bluetoothDevice.connectGatt(BluetoothClientManager.mApplication,
                     false,
                     this,
                     BluetoothDevice.TRANSPORT_LE)
             }
             else -> {
-                bluetoothDevice.connectGatt(BluetoothClientManager.app,
+                bluetoothDevice.connectGatt(BluetoothClientManager.mApplication,
                     false,
                     this
                 )

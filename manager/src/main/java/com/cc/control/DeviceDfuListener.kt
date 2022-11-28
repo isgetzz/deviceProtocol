@@ -3,9 +3,9 @@ package com.cc.control
 import no.nordicsemi.android.dfu.DfuProgressListenerAdapter
 
 /**
- * @Author      : cc
- * @Date        : on 2022-08-25 15:01.
- * @Description :dfu 固件更新监听
+ * Author      : cc
+ * Date        : on 2022-08-25 15:01.
+ * Description :dfu 固件更新监听
  */
 class DeviceDfuListener(private val onProgressListener: (onCompleted: Boolean, Int) -> Unit) :
     DfuProgressListenerAdapter() {

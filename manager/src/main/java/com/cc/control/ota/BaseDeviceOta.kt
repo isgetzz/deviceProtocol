@@ -2,9 +2,8 @@ package com.cc.control.ota
 
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.cc.control.BluetoothClientManager
 import com.cc.control.bean.DeviceConnectBean
 import com.cc.control.logD
@@ -22,7 +21,7 @@ import kotlin.math.floor
  * @Date        : on 2022-02-15 13:41.
  * @Description :ota 基类
  */
-abstract class BaseDeviceOta : LifecycleObserver {
+abstract class BaseDeviceOta : DefaultLifecycleObserver {
     protected val TAG = "BaseDeviceOta"
 
     companion object {
@@ -42,6 +41,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
      * fileName 文件路径
      */
     abstract fun initFilePath(filePath: String)
+
     /**
      * 结束标识
      */
@@ -73,11 +73,8 @@ abstract class BaseDeviceOta : LifecycleObserver {
         deviceConnectBean = connectBean
         deviceConnectBean.run {
             if (otaNotifyCharacter != null) {
-                BluetoothClientManager.client.notify(address,
-                    otaService,
-                    otaNotifyCharacter,
-                    object :
-                        BleNotifyResponse {
+                BluetoothClientManager.client.notify(address, otaService, otaNotifyCharacter,
+                    object : BleNotifyResponse {
                         override fun onResponse(code: Int) {}
                         override fun onNotify(service: UUID?, character: UUID?, value: ByteArray) {
                             if (value.isNotEmpty()) {
@@ -98,9 +95,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
         onSuccess: (() -> Unit)? = null,
     ) {
         deviceConnectBean.run {
-            BluetoothClientManager.client.write(
-                address,
-                otaService,
+            BluetoothClientManager.client.write(address, otaService,
                 if (control) otaControlCharacter else otaWriteCharacter,// true 7000
                 byteArray
             )
@@ -212,9 +207,9 @@ abstract class BaseDeviceOta : LifecycleObserver {
             index.inv() and 0xffff))
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
+    override fun onDestroy(owner: LifecycleOwner) {
         resetUpdate()
         unregisterListener()
+        super.onDestroy(owner)
     }
 }

@@ -5,7 +5,7 @@ import com.inuker.bluetooth.library.Constants
 import com.inuker.bluetooth.library.connect.listener.BleConnectStatusListener
 
 /**
- * @author      : cc
+ * author      : cc
  * on 2022-07-22 14:51.
  * 断开回调，如果连接的话需要先获取完后台配置才成功
  */

@@ -36,7 +36,7 @@ fun logI(tag: String, content: String, showLog: Boolean = false) {
 }
 
 val dateFormatFile: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US) //日期格式;
-val logFilePath = getFilePath(BluetoothClientManager.app) + "/Logs"
+val logFilePath = getFilePath(BluetoothClientManager.mApplication) + "/Logs"
 val date = Date()
 
 /**
@@ -73,9 +73,9 @@ fun writeToFile(tag: String, msg: String) {
  * @return
  */
 fun getFilePath(context: Context): String? {
-    return if (Environment.MEDIA_MOUNTED == Environment.MEDIA_MOUNTED || !Environment.isExternalStorageRemovable()) {
+    return if (Environment.MEDIA_MOUNTED == Environment.getExternalStorageState() || !Environment.isExternalStorageRemovable()) {
         //外部储存可用
-        context.getExternalFilesDir(null)!!.path //获得外部存储路径
+        context.getExternalFilesDir(null)!!.path
     } else {
         context.filesDir.path //直接存在/data/data里，非root手机是看不到的
     }

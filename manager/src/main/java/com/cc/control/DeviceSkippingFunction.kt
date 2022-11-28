@@ -5,9 +5,9 @@ import com.inuker.bluetooth.library.beacon.BeaconParser
 import java.util.*
 
 /**
- * @Author      : cc
- * @Date        : on 2022-02-18 16:53.
- * @Description :跳绳获取数据
+ * Author      : cc
+ * Date        : on 2022-02-18 16:53.
+ * Description :跳绳获取数据
  * 智健、mrk 协议
  */
 class DeviceSkippingFunction : BaseDeviceFunction() {
@@ -17,7 +17,7 @@ class DeviceSkippingFunction : BaseDeviceFunction() {
             dateArray.add(writeZJSkippingElectric())
         }
         if (deviceConnectInfoBean.deviceProtocol != DeviceConstants.D_SERVICE_TYPE_MRK) {
-            writeDeviceCmd()
+            writeData()
         }
     }
 
@@ -81,7 +81,7 @@ class DeviceSkippingFunction : BaseDeviceFunction() {
                     }
                 }
                 DEVICE_ZJ_MODEL_ADR -> {
-                    write(writeSkippingStart(), ::writeDeviceCmd)
+                    write(writeSkippingStart(), ::writeData)
                 }
             }
         }

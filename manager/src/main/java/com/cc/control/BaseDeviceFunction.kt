@@ -1,9 +1,11 @@
 package com.cc.control
 
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.cc.control.bean.DeviceConnectBean
-import com.cc.control.bean.DeviceNotifyBean
+import com.cc.control.bean.DeviceHeartConnectBean
 import com.cc.control.bean.DeviceTrainBean
 import com.cc.control.protocol.*
 import com.cc.control.protocol.DeviceConstants.D_SERVICE1826_2ADA
@@ -11,22 +13,30 @@ import com.inuker.bluetooth.library.Constants
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.connect.response.BleNotifyResponse
 import com.inuker.bluetooth.library.utils.ByteUtils
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.*
 
 /**
  * author  : cc
  * desc    : 蓝牙设备处理
- * time    : 2022/2/15
+ * time    : 2022/8/15
  */
 abstract class BaseDeviceFunction : DefaultLifecycleObserver {
     companion object {
         const val TAG = "BaseDeviceFunction"
     }
 
-    private var job: Job? = null//数据相关
-    private var deviceHeartJob: Job? = null//心率相关
-    protected var dateArray: ArrayList<ByteArray> = ArrayList()//获取数据、状态array
+    /**
+     *    获取数据、状态array
+     */
+    protected var dateArray: ArrayList<ByteArray> = ArrayList()
+
+    private var mLifecycleScope: LifecycleCoroutineScope? = null
+    private var mHeartScope: Job? = null
+    private var mDeviceDataScope: Job? = null
 
     /**
      * 柏群单车、跑步机需要先发连接指令,用于直播开启设备判断
@@ -36,17 +46,12 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
     /**
      * 通知数据回调，防止页面结束还收到数据并上报接口导致数据异常跟内存泄漏
      */
-    open var refreshData = true
-
-    /**
-     * 数据获取，防止控制指令跟数据指令间隔太短导致无法控制
-     */
-    open var writeData = true
+    open var isNotifyData = true
 
     /**
      * 记录设备解析完的数据
      */
-    open var deviceNotifyBean = DeviceTrainBean.DeviceTrainBO()
+    protected var deviceNotifyBean = DeviceTrainBean.DeviceTrainBO()
 
     /**
      *根据设备类型获取当前设备信息`
@@ -54,9 +59,15 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
     protected var deviceConnectInfoBean: DeviceConnectBean = DeviceConnectBean()
 
     /**
-     *设备状态回调
+     *设备运行状态回调
      */
     protected var deviceStatusListener: DeviceStatusListener? = null
+
+    /**
+     * 连接状态回调
+     */
+    private var deviceConnectListener: ((String, Boolean, Boolean) -> Unit)? = null
+
 
     /**
      * 数据回调
@@ -88,6 +99,7 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
      * 例如：当前暂停那么就会发送继续指令，当前运行就会发送暂停
      */
     open fun onDeviceTreadmillControl(isPause: Boolean = false) {
+
     }
 
     /**
@@ -100,59 +112,72 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
     /**
      * 设备类型
      */
-    private var deviceType = ""
+    private var mDeviceType = ""
 
     /**
      * 开始连接并获取数据
-     * @param oneDeviceType 设备大类
-     * @param dataListener 数据回调
-     * @param statusListener 设备状态回调
-     *
+     *  oneDeviceType 设备大类
+     *  dataListener 数据回调
+     *  statusListener 设备状态回调
      */
     open fun create(
         oneDeviceType: String = "",
         dataListener: ((DeviceTrainBean.DeviceTrainBO) -> Unit),
         statusListener: DeviceStatusListener? = null,
+        connectListener: (String, Boolean, Boolean) -> Unit,
     ) {
-        deviceType = oneDeviceType
+        mDeviceType = oneDeviceType
         deviceDataListener = dataListener
+        deviceConnectListener = connectListener
         deviceStatusListener = statusListener
         initDevice()
     }
 
     /**
-     * 初始化读写跟数据监听
+     * 初始化读写、数据监听
      * 第一次初始化设备连接才赋值，避免后续回调异常
      * isFirstConnectInit true 初始状态 false 首次连接初始化
      */
     private fun initDevice(isFirstConnectInit: Boolean = true) {
-        BluetoothClientManager.getDeviceConnectBean(deviceType).run {
+        BluetoothClientManager.getDeviceConnectBean(mDeviceType).run {
             if (isDeviceConnect) {
                 deviceConnectInfoBean = this
                 notifyRegister()
+                writeHeart()
                 onDeviceWrite(true)
-                writeDeviceHeart()
             } else {
+                //重置状态
+                mDeviceDataScope?.cancel()
+                mHeartScope?.cancel()
+                readyConnect = false
+                deviceNotifyBean.status = -1
                 deviceConnectInfoBean.isDeviceConnect = false
             }
-            deviceStatusListener?.onDeviceConnectStatus(deviceName,
-                isDeviceConnect,
-                isFirstConnectInit)
+            deviceConnectListener?.invoke(deviceName, isDeviceConnect, isFirstConnectInit)
         }
     }
 
     override fun onCreate(owner: LifecycleOwner) {
+        mLifecycleScope = owner.lifecycleScope
         BluetoothClientManager.deviceLastConnectBean.observe(owner) {
-            //已连接进入用mac地址判断  未连接进入连接完成再初始化。
-            if (it.deviceAddress == deviceConnectInfoBean.address || (deviceConnectInfoBean.address.isNotEmpty() && deviceConnectInfoBean.isDeviceConnect)) {
-                initDevice(false)
+            deviceConnectInfoBean.run {
+                //初始状态未连接，进入视频连接设备并成功回调，返回设备类型需为当前课程的对应的类型，避免多个设备操作状态异常
+                if (address.isEmpty() && it.deviceConnectStatus && mDeviceType == it.deviceType) {
+                    initDevice(false)
+                }
+                //初始状态已连接，重连或者断开连接回调。避免刚连接设备进入视频，onCreate 跟 observe 都会执行重复订阅
+                if (it.deviceAddress == address && (!it.deviceConnectStatus || !isDeviceConnect)) {
+                    initDevice(false)
+                }
             }
         }
+        //预防mLifecycleScope 没有初始化调用writeDeviceHeart 无法开启心率
+        writeHeart()
         super.onCreate(owner)
     }
 
     /**
-     * 下发指令
+     * 写入指令
      */
     protected fun write(
         byteArray: ByteArray?,
@@ -178,7 +203,7 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
     }
 
     /**
-     *读取
+     *读取指令
      */
     protected fun read(
         readServiceUUId: UUID,
@@ -198,22 +223,37 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
         }
     }
 
+
+    private var index = 0  //循环发送
+
     /**
      *  设备发送获取数据指令
-     *  statusCmd 部分设备需要先获取状态
+     *  部分设备需要先获取状态
      */
-    open fun writeDeviceCmd() {
-        job?.cancel()
-        job = null
-        job = GlobalScope.launch {
-            dateArray.forEach {
-                if (writeData) {
-                    write(it)
+    protected fun writeData() {
+        if (mLifecycleScope != null && (mDeviceDataScope == null || !mDeviceDataScope!!.isActive) && dateArray.size > 0)
+            mDeviceDataScope =
+                countDownCoroutines(mLifecycleScope!!, countDownTime = 500, onTick = {
+                    write(dateArray[index % dateArray.size])
+                    index++
+                })
+    }
+
+    /**
+     * 设备连接心跳间隔20s一次
+     */
+    private fun writeHeart() {
+        if (deviceConnectInfoBean.hasHeartRate && mLifecycleScope != null && (mHeartScope == null || !mHeartScope!!.isActive))
+            mHeartScope = countDownCoroutines(mLifecycleScope!!, countDownTime = 20000, onTick = {
+                BluetoothClientManager.client.write(
+                    deviceConnectInfoBean.address,
+                    string2UUID(DeviceConstants.D_SERVICE_MRK),
+                    string2UUID(DeviceConstants.D_CHARACTER_HEART_MRK),
+                    writeHeartRate()
+                ) {
+                    logD(TAG, "deviceHeartRate: $it")
                 }
-                delay(600)
-                writeDeviceCmd()
-            }
-        }
+            })
     }
 
     /**
@@ -232,23 +272,19 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
      */
     open fun notifyRegister() {
         deviceConnectInfoBean.run {
-            BluetoothClientManager.client.notify(address,
-                serviceUUId,
-                characterNotify,
-                mNotifyRsp)
+            BluetoothClientManager.client.notify(address, serviceUUId, characterNotify, mNotifyRsp)
             //华为通道订阅数据通知
             if (serviceUUId.toString().contains("1826")) {
-                BluetoothClientManager.client.notify(address,
-                    serviceUUId,
-                    string2UUID(D_SERVICE1826_2ADA), mNotifyRsp)
+                BluetoothClientManager.client.notify(address, serviceUUId,
+                    string2UUID(D_SERVICE1826_2ADA),
+                    mNotifyRsp)
             }
-            BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(true,
+            BluetoothClientManager.deviceHeartConnectBean.postValue(DeviceHeartConnectBean(true,
                 deviceType,
                 address))
             logI(TAG, "notifyRegister $serviceUUId $characterNotify $address")
         }
     }
-
 
     protected var adr = 0 //当前设备唯一标识
     protected var len = 0
@@ -261,7 +297,7 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
 
         override fun onNotify(service: UUID, character: UUID, value: ByteArray) {
             val data = DeviceConvert.bytesToHexString(value)
-            if (service.toString() == DeviceConstants.D_SERVICE_DATA_HEART && refreshData) {
+            if (service.toString() == DeviceConstants.D_SERVICE_DATA_HEART && isNotifyData) {
                 onBluetoothNotify(service, character, value, BeaconParser(value))
             } else if (value.size >= 2) {
                 adr = (value[0].toInt() and 0xff)
@@ -269,7 +305,7 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
                 length = value.size
                 if (value.size >= 4) {
                     deviceStatus = ((value[2].toInt() and 0xff))
-                    if (refreshData) {
+                    if (isNotifyData) {
                         onBluetoothNotify(service, character, value, BeaconParser(value))
                     }
                 }
@@ -279,37 +315,14 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
             }
             logD(TAG,
                 "mNotifyData: $data 服务特征值: $service $character " +
-                        "refreshData:$refreshData  adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
+                        "isNotifyData:$isNotifyData  adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
                         "deviceStatus: ${deviceStatus.dvToHex()} length ${length.dvToHex()}")
         }
     }
 
     /**
-     * 设备下发心跳
-     */
-    open fun writeDeviceHeart() {
-        if (deviceConnectInfoBean.hasHeartRate) {
-            deviceHeartJob?.cancel()
-            deviceHeartJob = null
-            deviceHeartJob = GlobalScope.launch(Dispatchers.IO) {
-                BluetoothClientManager.client.write(
-                    deviceConnectInfoBean.address,
-                    string2UUID(DeviceConstants.D_SERVICE_MRK),
-                    string2UUID(DeviceConstants.D_CHARACTER_HEART_MRK),
-                    writeHeartRate()
-                ) {
-                    logD(TAG, "deviceHeartRate: $it")
-                }
-                delay(20000)
-                deviceHeartJob?.cancel()
-                writeDeviceHeart()
-            }
-        }
-    }
-
-    /**
-     * 根据类型下发清除指令
-     * canClear 部分设备不能清除
+     *  发清除指令
+     *  canClear 部分设备不能清除
      *  onSuccess 指令发送成功回调
      */
     open fun writeDeviceClear(canClear: Boolean = true, onSuccess: (() -> Unit)? = null) {
@@ -330,23 +343,42 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
                 } else {
                     write(onDestroyWrite(), onSuccess)
                 }
-                writeToFile("onDeviceClear", "$canClear $deviceType $deviceName")
+                writeToFile("onDeviceClear", "$deviceType $deviceName")
             }
         }
     }
 
     /**
      * 控制的时候清除所有指令防止阻塞
-     *@param
      * Constants.REQUEST_READ，所有读请求
      * Constants.REQUEST_WRITE，所有写请求
      *Constants.REQUEST_NOTIFY，所有通知相关的请求
      *Constants.REQUEST_RSSI，所有读信号强度的请求
      * 清除所有请求，则传入0
      */
-    open fun clearAllRequest(clearType: Int = 0) {
+    protected fun clearAllRequest(clearType: Int = 0) {
         if (deviceConnectInfoBean.address.isNotEmpty())
             BluetoothClientManager.client.clearRequest(deviceConnectInfoBean.address, clearType)
+    }
+
+    /**
+     *设置控制并延迟，避免旋钮的指令保护间隔>200ms
+     */
+    protected fun deviceControlDelayed(writeData: ByteArray) {
+        if (mLifecycleScope != null) {
+            mDeviceDataScope?.cancel()
+            isNotifyData = false
+            mDeviceDataScope = mLifecycleScope!!.launch {
+                clearAllRequest()
+                write(writeData) {
+                    writeToFile(TAG, "deviceControlDelayed 写入成功${deviceConnectInfoBean.deviceName}")
+                }
+                delay(600)
+                isNotifyData = true
+                cancel()
+                writeData()
+            }
+        }
     }
 
     /**
@@ -363,25 +395,23 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
         this.deviceDataListener = dataListener
     }
 
-
     /**
      * 训练结束，回调接口置空防止持有activity引用内存泄漏
      */
     override fun onDestroy(owner: LifecycleOwner) {
-        job?.cancel()
-        job = null
-        deviceHeartJob?.cancel()
-        deviceHeartJob = null
-        writeDeviceClear()
         deviceConnectInfoBean.serviceUUId?.run {
             BluetoothClientManager.client.unnotify(deviceConnectInfoBean.address,
                 deviceConnectInfoBean.serviceUUId,
                 deviceConnectInfoBean.characterNotify) {}
-            BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(false,
+            //避免全局的心率带，数据通知订阅通道跟着生命周期被销毁，后续优化
+            BluetoothClientManager.deviceHeartConnectBean.postValue(DeviceHeartConnectBean(false,
                 deviceConnectInfoBean.deviceType,
                 deviceConnectInfoBean.address))
         }
-        refreshData = false
+        writeDeviceClear()
+        isNotifyData = false
+        mLifecycleScope?.cancel()
+        mLifecycleScope = null
         deviceDataListener = null
         deviceStatusListener = null
         super.onDestroy(owner)

@@ -1,13 +1,13 @@
 package com.cc.control
 
-import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.cc.control.protocol.DeviceConstants
+import com.inuker.bluetooth.library.beacon.BeaconParser
 import java.util.*
 
 /**
- * @Author      : cc
- * @Date        : on 2022-02-18 16:53.
- * @Description :心率带
+ * Author      : cc
+ * Date        : on 2022-02-18 16:53.
+ * Description :心率带
  */
 class DeviceHeartFunction : BaseDeviceFunction() {
     override fun onDeviceWrite(isCreate: Boolean) {

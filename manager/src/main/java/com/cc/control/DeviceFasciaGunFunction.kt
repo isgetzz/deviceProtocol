@@ -5,9 +5,9 @@ import com.inuker.bluetooth.library.beacon.BeaconParser
 import java.util.*
 
 /**
- * @Author      : cc
- * @Date        : on 2022-02-18 16:53.
- * @Description :筋膜枪 FFFO
+ * Author      : cc
+ * Date        : on 2022-02-18 16:53.
+ * Description :筋膜枪 FFFO
  */
 class DeviceFasciaGunFunction: BaseDeviceFunction() {
     companion object {
