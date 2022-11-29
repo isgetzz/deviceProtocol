@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
+import android.text.TextUtils
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import com.cc.control.bean.*
@@ -134,31 +135,105 @@ object BluetoothClientManager {
         heartMac: String,
         onConnectListener: ((isConnect: Boolean) -> Unit)? = null,
     ) {
-        if (heartMac.isEmpty()) {
+        if (isBluetoothOpened()) {
+            openBluetooth()
             onConnectListener?.invoke(false)
-        } else {
-            if (isBluetoothOpened()) {
-                openBluetooth()
-                onConnectListener?.invoke(false)
-                return
-            }
-            client.connect(heartMac, connectOptions) { code, _ ->
-                val isConnect = code == Constants.REQUEST_SUCCESS
-                if (isConnect) {
-                    client.registerConnectStatusListener(heartMac, mBleConnectStatusListener)
-                    saveDeviceManageBean(DeviceConnectBean().apply {
-                        deviceType = DeviceConstants.D_HEART
-                        address = heartMac
-                        serviceUUId = string2UUID(DeviceConstants.D_SERVICE_DATA_HEART)
-                        characterNotify = string2UUID(DeviceConstants.D_CHARACTER_DATA_HEART)
-                    })
+            return
+        }
+        if (heartMac.isEmpty()) {
+            searchHeart(heartMac){ isSearched ->
+                if (isSearched) {
+                    connectHeart(heartMac) {
+                        connectedHeartResult(onConnectListener, heartMac, it)
+                    }
+                } else {
+                    onConnectListener?.invoke(false)
                 }
-                onConnectListener?.invoke(isConnect)
-                deviceConnectObserverBean.postValue(DeviceConnectObserverBean(heartMac,
-                    isConnect,
-                    DeviceConstants.D_HEART))
+            }
+        } else {
+            connectHeart(heartMac) {
+                if (!it) {
+                    searchHeart(heartMac){ isSearched ->
+                        if (isSearched) {
+                            connectHeart(heartMac) { isConnected ->
+                                connectedHeartResult(onConnectListener, heartMac, isConnected)
+                            }
+                        } else {
+                            connectedHeartResult(onConnectListener, heartMac, false)
+                        }
+                    }
+                } else {
+                    connectedHeartResult(onConnectListener, heartMac, it)
+                }
             }
         }
+    }
+
+    /**
+     * 搜索设备
+     */
+    private fun searchHeart(heartMac: String, callback: (Boolean) -> Unit) {
+        client.search(searchRequest,object : SearchResponse {
+            override fun onSearchStarted() {
+
+            }
+
+            override fun onDeviceFounded(device: SearchResult?) {
+                if (TextUtils.equals(heartMac,device?.address)) {
+                    client.stopSearch()
+                    callback.invoke(true)
+                }
+            }
+
+            override fun onSearchStopped() {
+                callback.invoke(false)
+            }
+
+            override fun onSearchCanceled() {
+
+            }
+        })
+    }
+    /**
+     * 进行连接心率带处理
+     */
+    private fun connectHeart(heartMac: String, callback: (Boolean) -> Unit) {
+        client.connect(heartMac, connectOptions) { code, _ ->
+            val isConnect = code == Constants.REQUEST_SUCCESS
+            if (isConnect) {
+                client.registerConnectStatusListener(
+                    heartMac,
+                    mBleConnectStatusListener
+                )
+                saveDeviceManageBean(DeviceConnectBean().apply {
+                    deviceType = DeviceConstants.D_HEART
+                    address = heartMac
+                    serviceUUId =
+                        string2UUID(DeviceConstants.D_SERVICE_DATA_HEART)
+                    characterNotify =
+                        string2UUID(DeviceConstants.D_CHARACTER_DATA_HEART)
+                })
+            }
+            callback.invoke(isConnect)
+        }
+    }
+
+    /**
+     * 连接心率带后回调
+     */
+    private fun connectedHeartResult(
+        onConnectListener: ((isConnect: Boolean) -> Unit)?,
+        heartMac: String,
+        isConnect: Boolean
+    ) {
+        onConnectListener?.invoke(isConnect)
+        deviceConnectObserverBean.postValue(
+            DeviceConnectObserverBean(
+                heartMac,
+                isConnect,
+                DeviceConstants.D_HEART
+            )
+        )
     }
 
     /**
