@@ -173,6 +173,7 @@ object BluetoothClientManager {
      * 搜索设备
      */
     private fun searchHeart(heartMac: String, callback: (Boolean) -> Unit) {
+        var isSearched = false
         client.search(searchRequest,object : SearchResponse {
             override fun onSearchStarted() {
 
@@ -180,13 +181,16 @@ object BluetoothClientManager {
 
             override fun onDeviceFounded(device: SearchResult?) {
                 if (TextUtils.equals(heartMac,device?.address)) {
+                    isSearched = true
                     client.stopSearch()
                     callback.invoke(true)
                 }
             }
 
             override fun onSearchStopped() {
-                callback.invoke(false)
+                if(!isSearched){
+                    callback.invoke(false)
+                }
             }
 
             override fun onSearchCanceled() {
