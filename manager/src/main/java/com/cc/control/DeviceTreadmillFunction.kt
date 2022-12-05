@@ -20,6 +20,11 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
     override fun onDeviceWrite(isCreate: Boolean) {
         if (!isCreate) {
             onWriteStart()
+        } else {
+            //兼容X3需要下发请求指令
+            write(onWriteZJModelId()) {
+                write(onWriteTreadmillData())
+            }
         }
     }
 
