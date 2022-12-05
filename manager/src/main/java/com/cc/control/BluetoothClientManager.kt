@@ -72,7 +72,7 @@ object BluetoothClientManager {
     var isShowLog = false//是否打印日志
 
     /**
-     * 必须先初始化不然无法引用context
+     * 必须先初始化deviceNotify不然无法引用context
      */
     fun initDeviceManager(app: Application, showLog: Boolean = false) {
         this.app = app
