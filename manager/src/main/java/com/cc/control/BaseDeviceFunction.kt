@@ -307,7 +307,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
      *Constants.REQUEST_RSSI，所有读信号强度的请求
      * 清除所有请求，则传入0
      */
-    open fun clearAllRequest(clearType: Int = 0) {
+    open fun clearAllRequest(clearType: Int = Constants.REQUEST_WRITE) {
         if (deviceDateBean.address.isNotEmpty())
             BluetoothClientManager.client.clearRequest(deviceDateBean.address, clearType)
     }
