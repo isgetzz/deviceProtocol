@@ -328,6 +328,8 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         job = null
         deviceHeartJob?.cancel()
         deviceHeartJob = null
+        //解决跑步机结算之前会发送暂停导致无法响应停止指令
+        clearAllRequest()
         onDeviceClear()
         deviceDateBean.serviceUUId?.run {
             BluetoothClientManager.client.unnotify(deviceDateBean.address,
