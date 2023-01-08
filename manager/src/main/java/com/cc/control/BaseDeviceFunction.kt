@@ -408,6 +408,7 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
                 deviceConnectInfoBean.deviceType,
                 deviceConnectInfoBean.address))
         }
+        clearAllRequest()
         writeDeviceClear()
         isNotifyData = false
         mLifecycleScope?.cancel()
