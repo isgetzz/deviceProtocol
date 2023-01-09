@@ -150,7 +150,7 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
                 mDeviceDataScope?.cancel()
                 mHeartScope?.cancel()
                 readyConnect = false
-                deviceNotifyBean.status = -1
+                deviceNotifyBean.status = DEVICE_TREADMILL_STOP
                 deviceConnectInfoBean.isDeviceConnect = false
             }
             deviceConnectListener?.invoke(deviceName, isDeviceConnect, isFirstConnectInit)
@@ -356,7 +356,7 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
      *Constants.REQUEST_RSSI，所有读信号强度的请求
      * 清除所有请求，则传入0
      */
-    protected fun clearAllRequest(clearType: Int = 0) {
+    protected fun clearAllRequest(clearType: Int = Constants.REQUEST_WRITE) {
         if (deviceConnectInfoBean.address.isNotEmpty())
             BluetoothClientManager.client.clearRequest(deviceConnectInfoBean.address, clearType)
     }
@@ -408,6 +408,7 @@ abstract class BaseDeviceFunction : DefaultLifecycleObserver {
                 deviceConnectInfoBean.deviceType,
                 deviceConnectInfoBean.address))
         }
+        //解决跑步机结算之前会发送暂停导致无法响应停止指令
         clearAllRequest()
         writeDeviceClear()
         isNotifyData = false
