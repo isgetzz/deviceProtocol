@@ -1,5 +1,6 @@
 package com.cc.control
 
+import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
@@ -330,6 +331,7 @@ abstract class BaseDeviceFunction : LifecycleObserver {
         deviceHeartJob = null
         //解决跑步机结算之前会发送暂停导致无法响应停止指令
         clearAllRequest()
+        Log.d("ON_DESTROY", "onDestroy: ")
         onDeviceClear()
         deviceDateBean.serviceUUId?.run {
             BluetoothClientManager.client.unnotify(deviceDateBean.address,
