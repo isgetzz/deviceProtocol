@@ -12,13 +12,12 @@ class DeviceTrainBean(
     var modelId: String = "", //	型号ID
     var courseId: String = "", //
     var playTime: Int = 0, //
-    private var deviceTrainBO: DeviceTrainBO? = null, //	型课程ID	号ID
+    var deviceTrainBO: DeviceTrainBO? = null, //	型课程ID	号ID
 ) : Cloneable {
     @Throws(CloneNotSupportedException::class)
     public override fun clone(): Any {
         val deviceTrainBean = super.clone() as DeviceTrainBean
-        deviceTrainBean.deviceTrainBO =
-            deviceTrainBean.deviceTrainBO?.clone() as DeviceTrainBO
+        deviceTrainBean.deviceTrainBO = deviceTrainBean.deviceTrainBO?.clone() as DeviceTrainBO
         return deviceTrainBean
     }
 
@@ -65,7 +64,8 @@ class DeviceTrainBean(
             deviceTime = deviceTime,
             timestamp = timestamp,
             distance = distance,
-            count = count, skippingModel = -1)
+            count = count,
+            skippingModel = -1)
 
         public override fun clone(): Any {
             return try {
