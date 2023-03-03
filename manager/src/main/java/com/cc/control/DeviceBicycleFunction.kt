@@ -105,7 +105,7 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
                         deviceDataListener?.invoke(deviceNotifyBean)
                     } else if (startNotify) {
                         if (readyConnect) {
-                            deviceDataListener?.let { it(deviceNotifyBean) }
+                            deviceDataListener?.invoke(deviceNotifyBean)
                         } else if (dateArray.isEmpty()) {
                             byteArray?.run {
                                 dateArray.add(this)
