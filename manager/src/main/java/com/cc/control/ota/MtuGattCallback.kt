@@ -5,10 +5,10 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothProfile
 import android.os.Build
-import com.inuker.bluetooth.library.utils.BluetoothUtils
 import com.cc.control.BluetoothClientManager
 import com.cc.control.logD
 import com.cc.control.protocol.DeviceConstants.D_MTU_LENGTH
+import com.inuker.bluetooth.library.utils.BluetoothUtils
 
 /**
  * @Author      : cc

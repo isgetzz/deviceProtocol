@@ -141,7 +141,7 @@ object BluetoothClientManager {
             return
         }
         if (heartMac.isEmpty()) {
-            searchHeart(heartMac){ isSearched ->
+            searchHeart(heartMac) { isSearched ->
                 if (isSearched) {
                     connectHeart(heartMac) {
                         connectedHeartResult(onConnectListener, heartMac, it)
@@ -153,7 +153,7 @@ object BluetoothClientManager {
         } else {
             connectHeart(heartMac) {
                 if (!it) {
-                    searchHeart(heartMac){ isSearched ->
+                    searchHeart(heartMac) { isSearched ->
                         if (isSearched) {
                             connectHeart(heartMac) { isConnected ->
                                 connectedHeartResult(onConnectListener, heartMac, isConnected)
@@ -174,13 +174,13 @@ object BluetoothClientManager {
      */
     private fun searchHeart(heartMac: String, callback: (Boolean) -> Unit) {
         var isSearched = false
-        client.search(searchRequest,object : SearchResponse {
+        client.search(searchRequest, object : SearchResponse {
             override fun onSearchStarted() {
 
             }
 
             override fun onDeviceFounded(device: SearchResult?) {
-                if (TextUtils.equals(heartMac,device?.address)) {
+                if (TextUtils.equals(heartMac, device?.address)) {
                     isSearched = true
                     client.stopSearch()
                     callback.invoke(true)
@@ -188,7 +188,7 @@ object BluetoothClientManager {
             }
 
             override fun onSearchStopped() {
-                if(!isSearched){
+                if (!isSearched) {
                     callback.invoke(false)
                 }
             }
@@ -198,6 +198,7 @@ object BluetoothClientManager {
             }
         })
     }
+
     /**
      * 进行连接心率带处理
      */
@@ -228,7 +229,7 @@ object BluetoothClientManager {
     private fun connectedHeartResult(
         onConnectListener: ((isConnect: Boolean) -> Unit)?,
         heartMac: String,
-        isConnect: Boolean
+        isConnect: Boolean,
     ) {
         onConnectListener?.invoke(isConnect)
         deviceConnectObserverBean.postValue(
@@ -316,7 +317,10 @@ object BluetoothClientManager {
                 }
                 //获取到设备信息发送回调
                 isDeviceConnect = true
-                deviceConnectObserverBean.postValue(DeviceConnectObserverBean(address, true, deviceType, deviceName))
+                deviceConnectObserverBean.postValue(DeviceConnectObserverBean(address,
+                    true,
+                    deviceType,
+                    deviceName))
             })
         }
     }

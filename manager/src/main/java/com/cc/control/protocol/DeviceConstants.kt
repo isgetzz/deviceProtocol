@@ -17,7 +17,7 @@ object DeviceConstants {
     const val D_SKIPPING = "10" //跳绳
     const val D_HULA_HOOP = "21" //呼啦圈
     const val D_HEART = "100" //心率带
-    const val D_FAT_SCALE = "41"
+    const val D_FAT_SCALE = "41"//体脂秤
     const val D_PHYLLISRODS = "27" //菲利斯棒
 
     //心率状态
@@ -26,12 +26,12 @@ object DeviceConstants {
     const val D_SPORT_PART_FINISH = 400
 
     //后台定义OTA类型
-    const val D_OTA_TLW = 1
-    const val D_OTA_BT = 2
-    const val D_OTA_DFU = 3
-    const val D_OTA_XXY = 4
-    const val D_OTA_FRK = 5
-    const val D_OTA_LSW = 6
+    const val D_OTA_TLW = 1//泰凌威
+    const val D_OTA_BT = 2//博通
+    const val D_OTA_DFU = 3//DFU
+    const val D_OTA_XXY = 4//新向远
+    const val D_OTA_FRK = 5//富芮坤
+    const val D_OTA_LSW = 6//凌思威
 
     //训练类型
     const val D_TRAIN_FREE = 0 //自由训练
@@ -114,11 +114,11 @@ object DeviceConstants {
     const val D_SERVICE_ELECTRIC_HEART = "0000180f-0000-1000-8000-00805f9b34fb"
     const val D_CHARACTER_ELECTRIC_HEART = "00002a19-0000-1000-8000-00805f9b34fb"
 
-    const val D_SERVICE_TYPE_MRK = 1
-    const val D_SERVICE_TYPE_FTMS = 2
-    const val D_SERVICE_TYPE_ZJ = 3
-    const val D_SERVICE_TYPE_BQ = 4
-    const val D_SERVICE_TYPE_OTHER = 5
-    const val D_SERVICE_TYPE_FASCIA = 6
+    const val D_SERVICE_TYPE_MRK = 1 //麦瑞克
+    const val D_SERVICE_TYPE_FTMS = 2//华为
+    const val D_SERVICE_TYPE_ZJ = 3//智健
+    const val D_SERVICE_TYPE_BQ = 4//柏群
+    const val D_SERVICE_TYPE_OTHER = 5//其他类型，华为或者智健
+    const val D_SERVICE_TYPE_FASCIA = 6//筋膜枪
 
 }
