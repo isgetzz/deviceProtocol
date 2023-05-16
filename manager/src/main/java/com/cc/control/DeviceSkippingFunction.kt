@@ -10,22 +10,23 @@ import java.util.*
  * Description :跳绳获取数据
  * 智健、mrk 协议
  */
-class DeviceSkippingFunction : BaseDeviceFunction() {
-    override fun onDeviceWrite(isCreate: Boolean) {
+class DeviceSkippingFunction(device: String) : BaseDeviceFunction(device) {
+    override fun startWrite(isCreate: Boolean) {
         if (dateArray.isEmpty()) {
             dateArray.add(writeZJSkippingData())
             dateArray.add(writeZJSkippingElectric())
         }
-        if (deviceConnectInfoBean.deviceProtocol != DeviceConstants.D_SERVICE_TYPE_MRK) {
+        if (propertyBean.protocol != DeviceConstants.D_SERVICE_TYPE_MRK) {
             writeData()
         }
+        notifyBean.status = DEVICE_TREADMILL_RUNNING
     }
 
     /**
      * 跳绳如果是自由训练需要设置，其他模式设置完目标的时候就下发模式
      */
-    override fun onDeviceSetModel(model: Int, targetNum: Int, onSuccess: (() -> Unit)?) {
-        if (deviceConnectInfoBean.deviceProtocol == DeviceConstants.D_SERVICE_TYPE_MRK) {
+    override fun setDeviceModel(model: Int, targetNum: Int, onSuccess: (() -> Unit)) {
+        if (propertyBean.protocol == DeviceConstants.D_SERVICE_TYPE_MRK) {
             write(writeMrkReset()) {
                 if (model == DeviceConstants.D_TRAIN_FREE) {
                     write(writeMrkStart())
@@ -36,38 +37,29 @@ class DeviceSkippingFunction : BaseDeviceFunction() {
         } else write(writeZJSkippingModel(model, targetNum), onSuccess)
     }
 
-    override fun onDeviceControl(
-        speed: Int,
-        resistance: Int,
-        slope: Int,
-    ) {
-    }
+    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean) {}
 
-    override fun onBluetoothNotify(
-        service: UUID,
-        character: UUID,
-        value: ByteArray,
-        beaconParser: BeaconParser,
-    ) {
-        if (deviceConnectInfoBean.deviceProtocol == 1) {
-            if (value.size - 2 == len) {
-                onMrkProtocol(deviceNotifyBean, beaconParser, value.size - 5)
-                deviceDataListener?.invoke(deviceNotifyBean)
+    override fun onBluetoothNotify(service: UUID, character: UUID, parser: BeaconParser) {
+        val adr = parser.readByte()
+        val length = parser.readByte()
+        if (propertyBean.protocol == 1) {
+            if (dataLength - 2 == length) {
+                onMrkProtocol(notifyBean, parser, dataLength - 5)
+                mDataListener?.invoke(notifyBean)
             }
         } else {
-            beaconParser.setPosition(3)
-            when (deviceStatus) {
+            when (parser.readByte()) {
                 DEVICE_ZJ_ELECTRIC -> {
-                    deviceNotifyBean.electric = beaconParser.readByte()
-                    deviceDataListener?.invoke(deviceNotifyBean)
+                    notifyBean.electric = parser.readByte()
+                    mDataListener?.invoke(notifyBean)
                 }
                 DEVICE_ZJ_DATA -> {
-                    if (adr == value.size) {
+                    if (adr == dataLength) {
                         //速率 个数/时间//0.05 0.06 0.07
-                        val num = beaconParser.readShort()
+                        val num = parser.readShort()
                         val baseKarl = (if (Math.random() > 0.5) 0.05 else 0.07).toFloat()
-                        val second = beaconParser.readShort()
-                        deviceNotifyBean.run {
+                        val second = parser.readShort()
+                        notifyBean.run {
                             val karl = (if (num < count) num else num - count) * baseKarl
                             if (second > 0 && num > 0) {
                                 energy += karl
@@ -75,9 +67,9 @@ class DeviceSkippingFunction : BaseDeviceFunction() {
                                 deviceTime = second.toLong()
                                 count = num
                             }
-                            skippingModel = beaconParser.readByte()
+                            model = parser.readByte()
                         }
-                        deviceDataListener?.invoke(deviceNotifyBean)
+                        mDataListener?.invoke(notifyBean)
                     }
                 }
                 DEVICE_ZJ_MODEL_ADR -> {
@@ -88,6 +80,6 @@ class DeviceSkippingFunction : BaseDeviceFunction() {
     }
 
     override fun onDestroyWrite(): ByteArray {
-        return if (deviceConnectInfoBean.deviceProtocol == 1) writeMrkStop() else writeZJSkippingClear()
+        return if (propertyBean.protocol == 1) writeMrkStop() else writeZJSkippingClear()
     }
 }

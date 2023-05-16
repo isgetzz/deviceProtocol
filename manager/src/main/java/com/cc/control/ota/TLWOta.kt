@@ -3,8 +3,6 @@ package com.cc.control.ota
 import com.cc.control.protocol.CRC16
 import com.cc.control.protocol.CRC16.GeneralCRCFun
 import com.cc.control.protocol.dvSplitByteArr
-import com.cc.control.protocol.isFileExist
-import com.cc.control.protocol.readFileToByteArray
 import com.inuker.bluetooth.library.utils.ByteUtils
 import java.nio.ByteBuffer
 import java.util.*
@@ -60,11 +58,11 @@ class TLWOta : BaseDeviceOta() {
                 writeNoRsp(
                     writeBuffer.array(),
                     writeTotalSize,
-                    writePosition,
-                    onSuccess = {
-                        writePosition++
-                        otaFormat()
-                    })
+                    writePosition
+                ) {
+                    writePosition++
+                    otaFormat()
+                }
             } else {
                 write(writeOtaFinish(writeTotalSize - 1), onSuccess = {
                     deviceOtaListener?.invoke(D_OTA_SUCCESS, 100)

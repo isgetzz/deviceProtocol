@@ -1,49 +1,25 @@
 package com.cc.control.bean
 
 import android.os.Parcelable
-import com.cc.control.protocol.DeviceConstants
-import com.inuker.bluetooth.library.model.BleGattProfile
-import java.util.*
-import kotlinx.parcelize.Parcelize as Par
+import kotlinx.parcelize.Parcelize
 
 /**
  * @Author      : cc
  * @Date        : on 2022-02-15 14:05.
- * @Description :设备配置Bean
- * 正常ota writeNoRes部分特征值需要用write不然无法写入成功。
- * 连接的时候可根据蓝牙返回的状态判断 如:getCharacters().get(0).getProperty()
+ * @Description :设备状态监听
  */
-@Par
-class DeviceConnectBean(
-    var address: String = "",
-    var isDeviceConnect: Boolean = false,//绑定状态 true 连接
-    var deviceType: String = "",//设备类型
-    var deviceName: String = "", //蓝牙名称k60
-    var deviceId: String = "",//设备唯一Id
-    var deviceTwoTypeId: String = "",//二级id
-    var heartEquipmentId: String = "",//心率后台标识一Id
-    var serviceUUId: UUID? = null,//设备服务Id
-    var characterNotify: UUID? = null,
-    var characterWrite: UUID? = null,
-    var otaService: UUID? = null,
-    var otaWriteCharacter: UUID? = null,
-    var otaNotifyCharacter: UUID? = null,
-    var otaControlCharacter: UUID? = null,
-    var mtu: Int = DeviceConstants.D_MTU_LENGTH,//优化固件升级根据通道特征
-    var deviceProtocol: Int = 0,// 1麦瑞克   2FTMS  3智健  4柏群   6 筋膜枪
-    var bleProfile: BleGattProfile? = null,//设备特征值
-    var hasHeartRate: Boolean = false,//需要心跳
-    var deviceOtaType: Int = 0, //1:泰凌威 智建设备；2:博通; 3:DFU 4:新向远 5富芮坤 6 凌思威
-    var modelNumber: String = "",//ota modelId
-    var modelRevision: String = "",//ota version
-) : Parcelable {
-    constructor(
-        deviceType: String = "",
-        address: String = "",
-        serviceUUID: UUID,
-        characterNotify: UUID,
-    ) : this(address,
-        deviceType = deviceType,
-        serviceUUId = serviceUUID,
-        characterNotify = characterNotify)
-}
+@Parcelize
+data class DeviceConnectBean(
+    var address: String = "",//连接地址
+    var type: String = "",//心率带用到了
+    var name: String = "",//设备名称如果接口获取mac为空需要用蓝牙名称判断是否同一个设备
+    var isConnect: Boolean = false,//连接状态 true  requestDevice 成功 才为true
+    var startAuto: Boolean = true,//是否需要自动重连
+    var deviceRelId: String = "",//后台的Id标识用于设备绑定解绑
+    var modelId: String = "",//设备二级Id
+    var connecting: Boolean = false,//标记设备是否连接中
+    var isAuto: Boolean = false,//false 手动连接
+    var requestDevice: Boolean = false,//是否请求后台设备数据
+    var characteristic: List<CharacteristicBean> = listOf(),//请求连接接口需要 所有特征值数据
+    var uniqueModelIdentify: List<CharacteristicBean>? = listOf(),//请求连接接口需要 唯一确定的特征值数据
+) : Parcelable

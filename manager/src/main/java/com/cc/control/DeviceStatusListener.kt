@@ -1,22 +1,19 @@
 package com.cc.control
 
+
 /**
- * 跑步状态回调
- * onDeviceFinish 跑步机暂停
- * onDeviceSpeedCut 减速
- * onDeviceCountTime 倒计时
- * onDevicePause 暂停
- * onDeviceConnectStatus 设备状态
+ * onRunning 运行中 onPause 暂停  onSlowDown 减速中 onFinish 待机、停机、结束 onCountTime 倒计时
  */
 interface DeviceStatusListener {
-    fun onDeviceRunning()
 
-    fun onDevicePause()
+    fun onRunning() {}
 
-    fun onDeviceSpeedCut()
+    fun onPause() {}
 
-    fun onDeviceFinish()
+    fun onSlowDown() {}
 
-    fun onDeviceCountTime(time: Int)
+    fun onFinish() {}
+
+    fun onCountTime() {}
 
 }

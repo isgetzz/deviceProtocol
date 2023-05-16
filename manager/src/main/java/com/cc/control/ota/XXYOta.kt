@@ -3,8 +3,6 @@ package com.cc.control.ota
 import android.util.Log
 import com.cc.control.protocol.DeviceConvert.bytesToHexSum
 import com.cc.control.protocol.dvSplitByteArrEndSeamProtection
-import com.cc.control.protocol.isFileExist
-import com.cc.control.protocol.readFileToByteArray
 import com.inuker.bluetooth.library.utils.ByteUtils
 import java.util.*
 import kotlin.math.floor

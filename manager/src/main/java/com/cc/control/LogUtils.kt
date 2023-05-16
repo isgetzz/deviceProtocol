@@ -3,7 +3,7 @@ package com.cc.control
 import android.content.Context
 import android.os.Environment
 import android.util.Log
-import com.cc.control.BluetoothClientManager.isShowLog
+import com.cc.control.BluetoothManager.isShowLog
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,9 +35,11 @@ fun logI(tag: String, content: String, showLog: Boolean = false) {
     }
 }
 
-val dateFormatFile: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US) //日期格式;
-val logFilePath = getFilePath(BluetoothClientManager.mApplication) + "/Logs"
-val date = Date()
+private val dateFormatFile: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US) //日期格式;
+private val dateFormatHour: SimpleDateFormat =
+    SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US) //日期格式;
+private val logFilePath = getFilePath(BluetoothManager.mApplication) + "/Logs"
+private val date = Date()
 
 /**
  * 写入log日志
@@ -54,7 +56,7 @@ fun writeToFile(tag: String, msg: String) {
     try {
         fos = FileOutputStream(fileName, true) //这里的第二个参数代表追加还是覆盖，true为追加，false 为覆盖
         bw = BufferedWriter(OutputStreamWriter(fos))
-        bw.write("$data $tag\t $msg\n")
+        bw.write("${dateFormatHour.format(Date())} $tag\t $msg\n")
     } catch (e: IOException) {
         e.printStackTrace()
     } finally {
@@ -73,9 +75,9 @@ fun writeToFile(tag: String, msg: String) {
  * @return
  */
 fun getFilePath(context: Context): String? {
-    return if (Environment.MEDIA_MOUNTED == Environment.getExternalStorageState() || !Environment.isExternalStorageRemovable()) {
+    return if (!Environment.isExternalStorageRemovable()) {
         //外部储存可用
-        context.getExternalFilesDir(null)!!.path
+        context.getExternalFilesDir(null)!!.path //获得外部存储路径
     } else {
         context.filesDir.path //直接存在/data/data里，非root手机是看不到的
     }

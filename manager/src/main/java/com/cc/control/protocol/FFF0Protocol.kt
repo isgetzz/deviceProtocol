@@ -1,9 +1,9 @@
 package com.cc.control.protocol
 
+import com.cc.control.bean.DeviceTrainBO
+import com.cc.control.protocol.DeviceConvert.intArrToHexString
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.utils.ByteUtils
-import com.cc.control.bean.DeviceTrainBean
-import com.cc.control.protocol.DeviceConvert.intArrToHexString
 import kotlin.math.min
 
 /**
@@ -12,7 +12,7 @@ import kotlin.math.min
  * @Description :fff0 数据协议 智健、柏群设备都包含
  */
 fun onFFF0Protocol(
-    deviceNotifyBean: DeviceTrainBean.DeviceTrainBO,
+    deviceNotifyBean: DeviceTrainBO,
     deviceType: String,
     beaconParser: BeaconParser,
     length: Int,
@@ -22,6 +22,12 @@ fun onFFF0Protocol(
     val cmd = beaconParser.readByte()
     deviceNotifyBean.run {
         when (cmd) {
+            0x41 -> {//设备基础配置信息
+                beaconParser.readByte()//0x02
+                beaconParser.readByte()//阻力
+                beaconParser.readByte()//坡度
+                deviceNotifyBean.unitDistance = DeviceConvert.getBit(beaconParser.readByte(), 0)
+            }
             0x42 ->//状态
                 if (length == 15) {
                     beaconParser.readByte()
@@ -168,18 +174,15 @@ fun writeBQBicycle6Resistance(resistance: Int): ByteArray {//柏群椭圆机
  */
 fun writeFasciaGunStart(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xFD, 0x10, 0x01,
-        0xFD xor 0x10 xor 0x01,
-        0xFE))
+        0xFD xor 0x10 xor 0x01, 0xFE))
 }
 
 /**
  * 筋膜枪连接指令
  */
 fun writeFasciaGunConnect(): ByteArray {
-    return ByteUtils.stringToBytes(intArrToHexString(
-        0xFD, 0x40,
-        0x01, 0xFD xor 0x40 xor 1,
-        0xFE))
+    return ByteUtils.stringToBytes(intArrToHexString(0xFD, 0x40, 0x01,
+        0xFD xor 0x40 xor 1, 0xFE))
 }
 
 /**
@@ -187,8 +190,7 @@ fun writeFasciaGunConnect(): ByteArray {
  */
 fun writeFasciaGunControl(drag: Int = 1): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xFD, 0x20, drag,
-        0xFD xor 0x20 xor drag,
-        0xFE))
+        0xFD xor 0x20 xor drag, 0xFE))
 }
 
 /**
@@ -196,6 +198,5 @@ fun writeFasciaGunControl(drag: Int = 1): ByteArray {
  */
 fun writeFasciaGunClear(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0xFD, 0x10, 0x0,
-        0xFD xor 0x10,
-        0xFE))
+        0xFD xor 0x10, 0xFE))
 }

@@ -9,36 +9,25 @@ import java.util.*
  * Date        : on 2022-02-18 16:53.
  * Description :心率带
  */
-class DeviceHeartFunction : BaseDeviceFunction() {
-    override fun onDeviceWrite(isCreate: Boolean) {
+class DeviceHeartFunction(device: String) : BaseDeviceFunction(device) {
+    override fun startWrite(isCreate: Boolean) {
         read(UUID.fromString(DeviceConstants.D_SERVICE_ELECTRIC_HEART),
             UUID.fromString(DeviceConstants.D_CHARACTER_ELECTRIC_HEART)) {
-            deviceNotifyBean.electric = (it[0].toInt() and 0xff)
-            deviceDataListener?.invoke(deviceNotifyBean)
+            notifyBean.electric = (it[0].toInt() and 0xff)
+            mDataListener?.invoke(notifyBean)
         }
     }
 
-    override fun onDeviceControl(
-        speed: Int,
-        resistance: Int,
-        slope: Int,
-    ) {
-
+    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean) {
     }
 
-    override fun onBluetoothNotify(
-        service: UUID,
-        character: UUID,
-        value: ByteArray,
-        beaconParser: BeaconParser,
-    ) {
-        val flag = beaconParser.readByte()
-        val rat = if (flag == 0)
-            beaconParser.readByte()
-        else beaconParser.readShort()
-        deviceNotifyBean.rate = rat.coerceAtMost(200)
-        deviceDataListener?.invoke(deviceNotifyBean)
+    override fun onBluetoothNotify(service: UUID, character: UUID, parser: BeaconParser) {
+        val flag = parser.readByte()
+        val rat = if (flag == 0) parser.readByte() else parser.readShort()
+        notifyBean.rate = rat.coerceAtMost(200)
+        mDataListener?.invoke(notifyBean)
     }
+
 
     override fun onDestroyWrite(): ByteArray? {
         return null

@@ -27,6 +27,7 @@ class DeviceDfuListener(private val onProgressListener: (onCompleted: Boolean, I
         errorType: Int,
         message: String,
     ) {
+        logD("BaseDeviceOta onError", "mac: $deviceAddress  error: $error  type: $errorType  message: $message")
         onProgressListener.invoke(false, -1)
     }
 }

@@ -1,6 +1,6 @@
 package com.cc.control.protocol
 
-import com.cc.control.bean.DeviceTrainBean
+import com.cc.control.bean.DeviceTrainBO
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.utils.ByteUtils
 import kotlin.math.max
@@ -13,7 +13,7 @@ import kotlin.math.min
  *FTMS https://device.harmonyos.com/cn/docs/devicepartner/DevicePartner-Guides/bluetooth-modul-develop-0000001209983499#section14842195055213
  */
 fun onFTMSProtocol(
-    deviceNotifyBean: DeviceTrainBean.DeviceTrainBO,
+    deviceNotifyBean: DeviceTrainBO,
     deviceName: String,
     deviceType: String,
     beaconParser: BeaconParser,
@@ -162,8 +162,8 @@ fun onFTMSProtocol(
                 if (adr shr 6 and 1 == 1) { //1
                     beaconParser.readShort() //平均功率
                 }
-                if (adr shr 7 and 1 == 1) { //0
-                    beaconParser.readShort()
+                if (adr shr 7 and 1 == 1) { //阻力
+                    drag = beaconParser.readShort()
                 }
                 if (adr shr 8 and 1 == 1) { //1
                     energy = beaconParser.readShort().toFloat()
@@ -171,7 +171,7 @@ fun onFTMSProtocol(
                     beaconParser.readByte() //每分钟
                 }
                 if (adr shr 9 and 1 == 1) { //0
-                    beaconParser.readByte() //心率
+                    deviceRate = beaconParser.readByte() //心率
                 }
                 if (adr shr 10 and 1 == 1) { //0
                     beaconParser.readByte()

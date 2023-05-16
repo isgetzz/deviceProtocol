@@ -27,9 +27,7 @@ const val DEVICE_TREADMILL_DISABLE = 0x06//禁用 1，安全锁触发； 2，设
 const val DEVICE_TREADMILL_LENGTH = 17  //数据长度
 
 /**
- * 智健获取modelId
- * 除了跳绳其他设备都需要发送一个指令在获取数据,防止指令发送失效
- *
+ * 智健获取modelId 除了跳绳其他设备都需要发送一个指令在获取数据,防止指令发送失效
  */
 fun readZJModelId(): ByteArray {
     return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x50, 0x00, 0x50, 0x03))
@@ -99,6 +97,14 @@ fun writeZJBicycleControl(resistance: Int, slope: Int): ByteArray {
         resistance, slope,
         0x44 xor 0x05 xor resistance xor slope,
         0x03))
+}
+
+/**
+ * 智建设备参数指令
+ */
+
+fun writeZJInfo(): ByteArray {
+    return ByteUtils.stringToBytes(intArrToHexString(0x02, 0x41, 0x02, 0x43, 0x03))
 }
 
 /**

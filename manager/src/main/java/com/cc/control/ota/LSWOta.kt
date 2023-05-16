@@ -43,10 +43,10 @@ class LSWOta : BaseDeviceOta() {
             val sha32 = getSHA256()
             //源文件用sha256获得32字节、这里需要分成两包
             totalLength = ceil((size * 1.0 / writeLength)).toInt()
-            val littleLength = ceil(writeLength / (deviceConnectBean.mtu - 4.0)).toInt()//4096多少mtu
+            val littleLength = ceil(writeLength / (devicePropertyBean.mtu - 4.0)).toInt()//4096多少mtu
             val residueLength = size % writeLength //取最后剩余byte
             writeTotalSize =
-                (size / writeLength * littleLength + ceil(residueLength / (deviceConnectBean.mtu - 4.0))).toInt()
+                (size / writeLength * littleLength + ceil(residueLength / (devicePropertyBean.mtu - 4.0))).toInt()
             dvSplitByteArr(writeLength).run {
                 writeByteArrayList = this
             }
@@ -56,7 +56,7 @@ class LSWOta : BaseDeviceOta() {
                     sha32.length)),
                     true) {//成功
                     write(stringToBytes(D_OTA_SECOND_LSW + intTo4HexString(size) + intTo4HexString(
-                        deviceConnectBean.mtu - 4)),
+                        devicePropertyBean.mtu - 4)),
                         true)
                 }
             }
@@ -76,16 +76,14 @@ class LSWOta : BaseDeviceOta() {
             if (writeLittlePosition < writeLittleLength) {
                 writeNoRsp(writeLittleByteArrayList[writeLittlePosition],
                     writeTotalSize,
-                    writeProgress,
-                    writeLittleLength,
-                    writeLittlePosition) {
+                    writeProgress) {
                     writeProgress++
                     writeLittlePosition++
                     otaFormat()
                 }
             } else {
                 read {
-                    if (ackCheck(it, writeLength, deviceConnectBean.mtu - 4)) {
+                    if (ackCheck(it, writeLength, devicePropertyBean.mtu - 4)) {
                         writeLittlePosition = checkPosition(it, writeLittlePosition)
                         otaFormat()
                     } else {
@@ -117,7 +115,7 @@ class LSWOta : BaseDeviceOta() {
     private fun writePosition() {
         writeLittlePosition = 0
         write(stringToBytes(D_OTA_INDEX_LSW + intTo2HexString(writeTotalPosition)), true) {
-            writeByteArrayList[writeTotalPosition].dvPositionSplitByte(deviceConnectBean.mtu - 4)
+            writeByteArrayList[writeTotalPosition].dvPositionSplitByte(devicePropertyBean.mtu - 4)
                 .run {
                     writeLittleLength = size
                     writeLittleByteArrayList = this

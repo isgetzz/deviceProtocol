@@ -1,10 +1,8 @@
 package com.cc.control.ota
 
-import com.cc.control.BluetoothClientManager
+import com.cc.control.BluetoothManager
 import com.cc.control.protocol.CRC16
 import com.cc.control.protocol.dvSplitByteArrEndSeamProtection
-import com.cc.control.protocol.isFileExist
-import com.cc.control.protocol.readFileToByteArray
 import com.inuker.bluetooth.library.Code
 import java.nio.ByteBuffer
 import java.util.*
@@ -28,10 +26,8 @@ class BTOta : BaseDeviceOta() {
         filePath.readFileToByteArray().dvSplitByteArrEndSeamProtection(writeLength).run {
             writeByteArrayList = this
             writeTotalSize = size
-            deviceConnectBean.run {
-                BluetoothClientManager.client.write(address,
-                    otaService,
-                    otaControlCharacter,
+            devicePropertyBean.run {
+                BluetoothManager.client.write(address, otaService, otaControl,
                     writeByteArrayList[writePosition]) { code ->
                     if (code == Code.REQUEST_SUCCESS) {
                         otaFormat()
@@ -51,11 +47,11 @@ class BTOta : BaseDeviceOta() {
                     writeNoRsp(
                         dataWriteBuffer.array(),
                         writeTotalSize,
-                        writePosition,
-                        onSuccess = {
-                            writePosition++
-                            otaFormat()
-                        })
+                        writePosition
+                    ) {
+                        writePosition++
+                        otaFormat()
+                    }
                 } else {
                     deviceOtaListener?.invoke(D_OTA_SUCCESS, 100)
                 }
