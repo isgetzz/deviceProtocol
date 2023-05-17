@@ -46,4 +46,5 @@ dependencies {
     implementation 'no.nordicsemi.android:ble-common:2.2.0'
     api 'androidx.lifecycle:lifecycle-common-java8:2.6.1'
     embed(name: 'ICDeviceManager', ext: 'aar')
+    api project(':mouduleSacale')
 }
