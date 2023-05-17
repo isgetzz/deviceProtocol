@@ -22,8 +22,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     repositories {
         flatDir {
@@ -45,6 +45,6 @@ dependencies {
     implementation 'no.nordicsemi.android:dfu:1.10.3'//DFU升级库两个都要
     implementation 'no.nordicsemi.android:ble-common:2.2.0'
     api 'androidx.lifecycle:lifecycle-common-java8:2.6.1'
-    embed(name: 'ICDeviceManager', ext: 'aar')
     api project(':mouduleSacale')
+    embed(name: 'ICDeviceManager', ext: 'aar')
 }
