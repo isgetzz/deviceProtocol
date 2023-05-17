@@ -8,7 +8,6 @@ import com.cc.control.*
 import com.cc.control.bean.CharacteristicBean
 import com.cc.control.ota.*
 import com.inuker.bluetooth.library.model.BleGattProfile
-import com.cc.control.DeviceOtherFunction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,7 +20,7 @@ import java.util.*
 /**
  * @Author      : cc
  * @Date        : on 2022-06-29 10:07.
- * @Description :描述
+ * @Description :蓝牙处理类
  */
 
 /**
