@@ -1,2 +1,2 @@
 rootProject.name = "deviceManager"
-include ':app','manager','mouduleSacale'
+include ':app','manager'
