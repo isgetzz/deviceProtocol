@@ -18,9 +18,9 @@ import java.security.NoSuchAlgorithmException
 import java.util.*
 
 /**
- * @Author      : cc
- * @Date        : on 2022-06-29 10:07.
- * @Description :蓝牙处理类
+ * Author      : cc
+ * Date        : on 2022-06-29 10:07.
+ * Description :蓝牙处理类
  */
 
 /**
