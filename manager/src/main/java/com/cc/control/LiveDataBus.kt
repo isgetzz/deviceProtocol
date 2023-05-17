@@ -7,9 +7,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 
 /**
- *@author cc
- *@date 2023/2/8
- *@explain 解决在使用这个LiveDataBus的过程中，订阅者会收到订阅之前发布的消息 B站有相关LiveData详解
+ *author cc
+ *date 2023/2/8
+ *explain 解决在使用这个LiveDataBus的过程中，订阅者会收到订阅之前发布的消息 B站有相关LiveData详解
  *fragment订阅会有问题,进入之后会收到上一次的数据
  */
 object LiveDataBus {
