@@ -3,7 +3,7 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-parcelize'
     id 'com.github.dcendents.android-maven'
-
+    id 'com.kezong.fat-aar'
 }
 group = 'com.github.cc000000'
 android {
@@ -22,22 +22,28 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    repositories {
+        flatDir {
+            dirs 'libs'
+        }
+    }
+    fataar {
+        transitive = true
     }
 }
-
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
     compileOnly 'androidx.appcompat:appcompat:1.3.1'
-    compileOnly 'androidx.core:core-ktx:1.3.1'
+    compileOnly 'androidx.core:core-ktx:1.10.1'
     compileOnly 'com.alibaba:fastjson:1.2.83'
     api 'com.inuker.bluetooth:library:1.4.0'
     compileOnly 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-    compileOnly 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1'
-    compileOnly 'androidx.lifecycle:lifecycle-runtime-ktx:2.2.0'//lifecycleScope
+    compileOnly 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
+    compileOnly 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'//lifecycleScope
     implementation 'no.nordicsemi.android:dfu:1.10.3'//DFU升级库两个都要
     implementation 'no.nordicsemi.android:ble-common:2.2.0'
-    api 'androidx.lifecycle:lifecycle-common-java8:2.2.0'
-    api project(':mouduleSacale')
+    api 'androidx.lifecycle:lifecycle-common-java8:2.6.1'
+    embed(name: 'ICDeviceManager', ext: 'aar')
 }

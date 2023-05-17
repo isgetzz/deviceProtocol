@@ -1,6 +1,5 @@
-package com.merit.common.control
+package com.cc.control
 
-import com.cc.control.BaseDeviceFunction
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import java.util.*
 

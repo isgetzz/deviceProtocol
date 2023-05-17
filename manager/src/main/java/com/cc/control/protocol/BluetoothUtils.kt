@@ -8,7 +8,7 @@ import com.cc.control.*
 import com.cc.control.bean.CharacteristicBean
 import com.cc.control.ota.*
 import com.inuker.bluetooth.library.model.BleGattProfile
-import com.merit.common.control.DeviceOtherFunction
+import com.cc.control.DeviceOtherFunction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
