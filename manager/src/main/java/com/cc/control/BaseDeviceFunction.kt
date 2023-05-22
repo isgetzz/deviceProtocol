@@ -133,7 +133,7 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
     /**
      * 根据设备状态开启或者断开设备相关交互
      */
-    private fun initDevice() {
+    open fun initDevice() {
         val bean = BluetoothManager.getConnectBean(mDeviceType)
         if (bean.isConnect) {
             propertyBean = bean
