@@ -2,23 +2,22 @@ package com.cc.control
 
 import com.cc.control.protocol.*
 import com.inuker.bluetooth.library.beacon.BeaconParser
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.util.*
 
 /**
- * @Author      : cc
- * @Date        : on 2022-02-18 18:38.
- * @Description : 智健跑步机 x5、x3、x1、马克龙
+ * Author      : cc
+ * Date        : on 2022-02-18 18:38.
+ * Description : 智健跑步机 x5、x3、x1、马克龙
  */
-open class DeviceTreadmillFunction : BaseDeviceFunction() {
+open class DeviceTreadmillFunction(device: String) : BaseDeviceFunction(device) {
     /**
-     * 智健协议除了跳绳需要发送获取状态前发送一个指令
-     * BaseDeviceFunction 不做onWriteStart处理，根据跑步机状态再发送对应指令
+     * 先获取跑步机的状态，自由训练、直播录播、视频根据当前状态处理，避免x5、T05部分设备不主动获取而无法开始
      */
-    override fun onDeviceWrite(isCreate: Boolean) {
-        if (!isCreate) {
+    override fun startWrite(isCreate: Boolean) {
+        if (isCreate) {
+            write(readZJModelId())
+            write(writeTreadmillData())
+        } else {
             onWriteStart()
         } else {
             //兼容X3需要下发请求指令
@@ -33,17 +32,17 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
      */
     private fun onWriteStart(onSuccessCallback: (() -> Unit)? = null) {
         if (dateArray.isEmpty()) {
-            dateArray.add(onWriteTreadmillData())
+            dateArray.add(writeTreadmillData())
         }
         if (readyConnect) {
-            onDeviceCmd()
+            writeData()
             onSuccessCallback?.invoke()
         } else {
-            write(onWriteZJModelId())
-            write(onWriteTreadmillStart()) {
-                write(onWriteTreadmillReady()) {
+            write(readZJModelId())
+            write(writeTreadmillStart()) {
+                write(writeTreadmillReady()) {
                     readyConnect = true
-                    onDeviceCmd()
+                    writeData()
                     onSuccessCallback?.invoke()
                 }
             }
@@ -54,93 +53,73 @@ open class DeviceTreadmillFunction : BaseDeviceFunction() {
     /**
      * 智健协议单位0.1所以跑步机速度需要*10
      */
-    override fun onDeviceControl(
-        speed: Int,
-        resistance: Int,
-        slope: Int,
-    ) {
-        writeToFile(TAG, "onWriteStart 清除其他指令:跑步机 控制延时 $speed $resistance $slope $readyConnect")
-        clearAllRequest()
-        GlobalScope.launch {
-            writeData = false
-            delay(300)
-            onWriteStart {
-                write(onWriteTreadmillControl(speed, slope))
-                writeToFile(TAG, "onWriteStart 成功:跑步机 控制延时 $speed $resistance $slope")
-                //  writeData = true
-            }
-            delay(300)
-            writeData = true
-        }
-    }
-
-    override fun onDeviceTreadmillControl(isPause: Boolean) {
-        clearAllRequest()
+    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean) {
         onWriteStart {
-            write(if (isPause) onWriteTreadmillStop() else onWriteTreadmillStart())
+            deviceControl(writeTreadmillControl(speed, slope), isDelayed)
         }
-        writeToFile("onDeviceTreadmillControl 跑步机", "isPause: $isPause")
+        writeToFile(TAG, "onControl ${propertyBean.name} $speed $slope $readyConnect")
     }
 
-    override fun onBluetoothNotify(
-        service: UUID,
-        character: UUID,
-        value: ByteArray,
-        beaconParser: BeaconParser,
-    ) {
-        if (len == 0x51) {
-            deviceNotifyBean.run {
+    override fun onTreadmillControl(isPause: Boolean) {
+        if (!isPause) {
+            onWriteStart {
+                write(writeTreadmillStart())
+            }
+        } else if (notifyBean.status == DEVICE_TREADMILL_RUNNING) {
+            write(writeTreadmillStop())
+        }
+        writeToFile("onTreadmillControl 跑步机", "isPause: $isPause")
+    }
+
+    override fun onBluetoothNotify(service: UUID, character: UUID, parser: BeaconParser) {
+        parser.readByte()//标识位
+        if (parser.readByte() == 0x51) {
+            notifyBean.run {
+                val deviceStatus = parser.readByte()
                 when (deviceStatus) {
                     DEVICE_TREADMILL_PAUSE -> { //跑步机暂停并处于减速完成
                         if (status != deviceStatus) {
-                            deviceStatusListener?.onDevicePause()
+                            mStatusListener?.onPause()
                         }
                     }
                     DEVICE_TREADMILL_AWAIT, DEVICE_TREADMILL_STOP, DEVICE_TREADMILL_DISABLE, DEVICE_TREADMILL_MALFUNCTION ->
-                        //因为刚连跑步机状态可能是待机、停机
-                        //获取过数据并且，不是重连
+                        //因为刚连跑步机状态可能是待机、停机 获取过数据并且，不是重连
                         if (deviceStatus != status) {
-                            writeToFile("onDeviceFinish 跑步机状态", "$deviceStatus")
-                            deviceStatusListener?.onDeviceFinish()
+                            mStatusListener?.onFinish()
                         }
                     DEVICE_TREADMILL_LAUNCHING -> {//倒计时
-                        beaconParser.setPosition(3)
-                        deviceStatusListener?.onDeviceCountTime(beaconParser.readByte())
+                        if (deviceStatus != status)
+                            mStatusListener?.onCountTime()
                     }
                     DEVICE_TREADMILL_COUNTDOWN -> { //减速中
-                        if (deviceStatus != status)
-                            deviceStatusListener?.onDeviceSpeedCut()
+                        if (deviceStatus != status) mStatusListener?.onSlowDown()
                     }
                     DEVICE_TREADMILL_RUNNING -> {//启动把状态改为运行中
-                        if (deviceStatus != status)
-                            deviceStatusListener?.onDeviceRunning()
-
+                        if (deviceStatus != status) mStatusListener?.onRunning()
                     }
                 }
                 status = deviceStatus
                 //运行中并且长度符合防止脏数据
-                if (deviceStatus != DEVICE_TREADMILL_RUNNING || length != DEVICE_TREADMILL_LENGTH)
+                if (deviceStatus != DEVICE_TREADMILL_RUNNING || dataLength != DEVICE_TREADMILL_LENGTH)
                     return
-                //运行状态,第三位开始数据位
-                beaconParser.setPosition(3)
-                speed = (beaconParser.readByte() / 10.0).toFloat() //当前速度
-                gradient = beaconParser.readByte()//当前坡度
-                deviceTime = beaconParser.readShort().toLong() //时间
-                var realDistance = beaconParser.readShort() //距离
+                speed = (parser.readByte() / 10.0).toFloat() //当前速度
+                gradient = parser.readByte()//当前坡度
+                deviceTime = parser.readShort().toLong() //时间
+                var realDistance = parser.readShort() //距离
                 if (realDistance and 0x8000 == 0x8000) {
                     realDistance = (realDistance and 0x7FFF) * 10
                 }
                 distance = realDistance
-                energy = (beaconParser.readShort() / 10.0f) // 10.0//热量
-                count = beaconParser.readShort() //步数
-                val rat = beaconParser.readByte()
+                energy = (parser.readShort() / 10.0f) // 10.0//热量
+                count = parser.readShort() //步数
+                val rat = parser.readByte()
                 this.deviceRate = rat.coerceAtMost(200) //当前心率
-                deviceDataListener?.invoke(this)
+                mDataListener?.invoke(this)
             }
         }
     }
 
     override fun onDestroyWrite(): ByteArray {
-        return onWriteTreadmillClear()
+        return writeTreadmillClear()
     }
 }

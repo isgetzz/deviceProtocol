@@ -1,12 +1,12 @@
 package com.cc.control.ota
 
 import android.net.Uri
+import android.text.TextUtils
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
-import com.cc.control.BluetoothClientManager
-import com.cc.control.bean.DeviceConnectBean
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import com.cc.control.BluetoothManager
+import com.cc.control.bean.DevicePropertyBean
 import com.cc.control.logD
 import com.cc.control.protocol.CRC16
 import com.cc.control.protocol.DeviceConvert.bytesToHexString
@@ -14,7 +14,9 @@ import com.inuker.bluetooth.library.Code.REQUEST_SUCCESS
 import com.inuker.bluetooth.library.Constants
 import com.inuker.bluetooth.library.connect.response.BleNotifyResponse
 import com.inuker.bluetooth.library.utils.ByteUtils
-import kotlinx.coroutines.Job
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
 import java.util.*
 import kotlin.math.floor
 
@@ -23,7 +25,7 @@ import kotlin.math.floor
  * @Date        : on 2022-02-15 13:41.
  * @Description :ota 基类
  */
-abstract class BaseDeviceOta : LifecycleObserver {
+abstract class BaseDeviceOta : DefaultLifecycleObserver {
     protected val TAG = "BaseDeviceOta"
 
     companion object {
@@ -32,7 +34,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
         const val D_OTA_ERROR = 2//失败
     }
 
-    protected lateinit var deviceConnectBean: DeviceConnectBean
+    protected lateinit var devicePropertyBean: DevicePropertyBean
 
     /**
      *  ota回调
@@ -42,9 +44,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
     /**
      * fileName 文件路径
      */
-    abstract fun onFile(filePath: String)
-
-    protected var job: Job? = null
+    abstract fun initFilePath(filePath: String)
 
     /**
      * 结束标识
@@ -66,7 +66,7 @@ abstract class BaseDeviceOta : LifecycleObserver {
      * 创建对象
      */
     open fun create(
-        connectBean: DeviceConnectBean,
+        connectBean: DevicePropertyBean,
         activity: AppCompatActivity? = null,
         uri: Uri? = null,
         otaListener: ((Int, Int) -> Unit)? = null,
@@ -74,14 +74,11 @@ abstract class BaseDeviceOta : LifecycleObserver {
         mActivity = activity
         dfuUri = uri
         deviceOtaListener = otaListener
-        deviceConnectBean = connectBean
-        deviceConnectBean.run {
-            if (otaNotifyCharacter != null) {
-                BluetoothClientManager.client.notify(address,
-                    otaService,
-                    otaNotifyCharacter,
-                    object :
-                        BleNotifyResponse {
+        devicePropertyBean = connectBean
+        devicePropertyBean.run {
+            if (otaNotify != null) {
+                BluetoothManager.client.notify(address, otaService, otaNotify,
+                    object : BleNotifyResponse {
                         override fun onResponse(code: Int) {}
                         override fun onNotify(service: UUID?, character: UUID?, value: ByteArray) {
                             if (value.isNotEmpty()) {
@@ -101,20 +98,10 @@ abstract class BaseDeviceOta : LifecycleObserver {
         control: Boolean = false,
         onSuccess: (() -> Unit)? = null,
     ) {
-        deviceConnectBean.run {
-            BluetoothClientManager.client.write(
-                address,
-                otaService,
-                if (control) otaControlCharacter else otaWriteCharacter,// true 7000
-                byteArray
-            )
-            {
+        devicePropertyBean.run {
+            val uuid = if (control) otaControl else otaWrite // true 7000
+            BluetoothManager.client.write(address, otaService, uuid, byteArray) {
                 val sb = StringBuffer()
-                sb.append(if (it == Constants.REQUEST_SUCCESS) {
-                    "OTA写入成功:"
-                } else {
-                    "OTA写入失败:"
-                })
                 sb.append("mtu:$mtu")
                 sb.append("\t")
                 sb.append(bytesToHexString(byteArray))
@@ -123,11 +110,15 @@ abstract class BaseDeviceOta : LifecycleObserver {
                 sb.append("\t")
                 sb.append("服务:" + otaService.toString())
                 sb.append("\t")
-                sb.append("特征:" + if (control) otaControlCharacter else otaWriteCharacter)
-                logD(TAG, "write: $sb")
-                if (it == Constants.REQUEST_SUCCESS) {
+                sb.append("特征:$uuid")
+                val writeStatus = if (it == Constants.REQUEST_SUCCESS) {
                     onSuccess?.invoke()
+                    "OTA写入成功:"
+                } else {
+                    "OTA写入失败:"
                 }
+                sb.append(writeStatus)
+                logD(TAG, "write: $sb")
             }
         }
     }
@@ -139,30 +130,19 @@ abstract class BaseDeviceOta : LifecycleObserver {
         value: ByteArray,
         totalSize: Int,
         position: Int,
-        littleSize: Int = 0,
-        littlePosition: Int = 0,
         onSuccess: (() -> Unit)? = null,
     ) {
-        deviceConnectBean.run {
-            BluetoothClientManager.client.write(
-                address,
-                otaService,
-                otaWriteCharacter,
-                value
-            )
-            { code ->
+        devicePropertyBean.run {
+            BluetoothManager.client.write(address, otaService, otaWrite, value) { code ->
                 if (code == REQUEST_SUCCESS) {
                     val progress = position + 1
-                    logD(TAG,
-                        "writeNoRsp: \"OTA总长度:$totalSize 当前长度:$progress ===>当前扇区总长度:$littleSize " + "当前长度:${littlePosition + 1} ===>\"\n ${
-                            bytesToHexString(value)
-                        }")
+                    logD(TAG, "writeNoRsp:总:$totalSize pro:$progress ${bytesToHexString(value)}")
                     deviceOtaListener?.invoke(D_OTA_UPDATE,
                         floor(progress * 1.0 / totalSize * 100).toInt())
                     onSuccess?.invoke()
                 } else {
                     deviceOtaListener?.invoke(D_OTA_ERROR, 0)
-                    logD(TAG, "writeNoRsp 失败u:${bytesToHexString(value)} ")
+                    logD(TAG, "writeNoRsp 失败:${bytesToHexString(value)} ")
                 }
             }
         }
@@ -171,18 +151,12 @@ abstract class BaseDeviceOta : LifecycleObserver {
     /**
      *读取
      */
-    protected fun read(
-        onSuccess: ((ByteArray) -> Unit)? = null,
-    ) {
-        deviceConnectBean.run {
-            BluetoothClientManager.client.read(
-                address,
-                otaService,
-                otaWriteCharacter
-            ) { code, data ->
+    protected fun read(onSuccess: ((ByteArray) -> Unit)? = null) {
+        devicePropertyBean.run {
+            BluetoothManager.client.read(address, otaService, otaWrite) { code, data ->
                 if (code == Constants.REQUEST_SUCCESS) {
                     onSuccess?.invoke(data)
-                    logD(TAG, "read: ${bytesToHexString(data)}$otaService $otaWriteCharacter")
+                    logD(TAG, "read: ${bytesToHexString(data)}$otaService $otaWrite")
                 }
             }
         }
@@ -193,14 +167,12 @@ abstract class BaseDeviceOta : LifecycleObserver {
      *  关闭刷新通知
      */
     fun resetUpdate() {
-        deviceConnectBean.run {
-            if (otaNotifyCharacter != null)
-                BluetoothClientManager.client.unnotify(address, otaService, otaNotifyCharacter) {}
+        devicePropertyBean.run {
+            if (otaNotify != null)
+                BluetoothManager.client.unnotify(address, otaService, otaNotify) {}
         }
         deviceOtaListener = null
         isFinish = true
-        job?.cancel()
-        job = null
     }
 
     /**
@@ -213,14 +185,42 @@ abstract class BaseDeviceOta : LifecycleObserver {
     /**
      * 结束指令
      */
-    protected fun onOTAEnd(index: Int): ByteArray {
+    protected fun writeOtaFinish(index: Int): ByteArray {
         return ByteUtils.stringToBytes("02ff" + CRC16.stringTransposition(index) + CRC16.stringTransposition(
             index.inv() and 0xffff))
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
+    override fun onDestroy(owner: LifecycleOwner) {
         resetUpdate()
         unregisterListener()
+        super.onDestroy(owner)
     }
+  protected  fun String.readFileToByteArray(): ByteArray {
+        var bytes = ByteArray(0)
+        try {
+            val fis = FileInputStream(this)
+            val max = fis.available()
+            bytes = ByteArray(max)
+            fis.read(bytes)
+            fis.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        return bytes
+    }
+
+    /**
+     * Indicates if this file represents colorlist file on the underlying file system.
+     *
+     *  文件路径
+     * @return 是否存在文件
+     */
+    protected  fun String.isFileExist(): Boolean {
+        if (TextUtils.isEmpty(this)) {
+            return false
+        }
+        val file = File(this)
+        return file.exists() && file.isFile
+    }
+
 }

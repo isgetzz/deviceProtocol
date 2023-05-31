@@ -1,34 +1,44 @@
 package com.cc.control
 
-import android.util.Log
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
-import com.cc.control.bean.DeviceConnectBean
-import com.cc.control.bean.DeviceNotifyBean
-import com.cc.control.bean.DeviceTrainBean
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import com.cc.control.DeviceFasciaGunFunction.Companion.STATUS_RUNNING
+import com.cc.control.LiveDataBus.CONNECT_BEAN_KEY
+import com.cc.control.LiveDataBus.STOP_AUTO_KEY
+import com.cc.control.bean.*
+import com.cc.control.ota.MtuGattCallback
 import com.cc.control.protocol.*
 import com.cc.control.protocol.DeviceConstants.D_SERVICE1826_2ADA
 import com.inuker.bluetooth.library.Constants
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.connect.response.BleNotifyResponse
 import com.inuker.bluetooth.library.utils.ByteUtils
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.*
 
 /**
- * author : cc
- * desc    : 设备数据类
- * time    : 2022/2/15
+ * author  : cc
+ * desc    : 蓝牙设备处理
+ * time    : 2022/8/15
  */
-abstract class BaseDeviceFunction : LifecycleObserver {
+abstract class BaseDeviceFunction(private var mDeviceType: String = "") : DefaultLifecycleObserver {
     companion object {
         const val TAG = "BaseDeviceFunction"
     }
 
-    protected var job: Job? = null//数据处理线程
-    private var deviceHeartJob: Job? = null//心率的线程
-    protected var dateArray: ArrayList<ByteArray> = ArrayList()//数据指令
+    /**
+     * 获取数据、状态array
+     */
+    protected var dateArray: ArrayList<ByteArray> = ArrayList()
+    private var writeIndex = 0  //循环发送index
+    protected var mLifecycleScope: LifecycleCoroutineScope? = null//主协程
+    private var mHeartScope: Job? = null//心跳
+    private var mDataScope: Job? = null//数据指令
 
     /**
      * 柏群单车、跑步机需要先发连接指令,用于直播开启设备判断
@@ -36,257 +46,221 @@ abstract class BaseDeviceFunction : LifecycleObserver {
     protected var readyConnect = false
 
     /**
-     * 通知数据回调，防止页面结束还收到数据并上报接口导致数据异常跟内存泄漏
+     * 刷新阻力速度坡度，避免自由训练控制过程中更新UI显示
      */
-    open var refreshData = true
+    open var isRefreshResistance = true
 
     /**
-     * 数据获取，防止控制指令跟数据指令间隔太短导致无法控制
+     * 通知数据回调，防止页面结束还收到数据并上报接口导致数据异常跟内存泄漏
      */
-    open var writeData = true
+    open var isNotifyData = true
 
     /**
      * 记录设备解析完的数据
      */
-    var deviceNotifyBean = DeviceTrainBean.DeviceTrainBO()
-
-    /**
-     *设备状态回调
-     */
-    protected var deviceStatusListener: DeviceStatusListener? = null
+    protected var notifyBean = DeviceTrainBO()
 
     /**
      *根据设备类型获取当前设备信息`
      */
-    var deviceDateBean: DeviceConnectBean = DeviceConnectBean()
+    protected var propertyBean: DevicePropertyBean = DevicePropertyBean()
+
+    /**
+     *设备运行状态回调
+     */
+    protected var mStatusListener: DeviceStatusListener? = null
+
+    /**
+     * 连接状态回调
+     */
+    private var mConnectListener: ((deviceName: String, isConnect: Boolean) -> Unit)? = null
 
     /**
      * 数据回调
      */
-    protected var deviceDataListener: ((DeviceTrainBean.DeviceTrainBO) -> Unit)? = null
-
-    /**
-     *退出通道关闭
-     */
-    abstract fun onDestroyWrite(): ByteArray?
-
-    /**
-     * 开始下发指令
-     * isCreate 目前用于跑步机
-     */
-    abstract fun onDeviceWrite(isCreate: Boolean)
-
-    /**
-     * 如果是跑步机 传速度跟坡度 阻力0 如果是阻力设备 传阻力坡度数据0
-     * speed 速度
-     * resistance 阻力
-     * slope 坡度
-     */
-    abstract fun onDeviceControl(speed: Int = 0, resistance: Int = 0, slope: Int = 0)
-
-    /**
-     * 跑步机 暂停、继续、开始
-     * 会先判断当前状态再去发送对应指令
-     * 例如：当前暂停那么就会发送继续指令，当前运行就会发送暂停
-     */
-    open fun onDeviceTreadmillControl(isPause: Boolean = false) {
-    }
-
-    /**
-     *设置模式
-     */
-    open fun onDeviceSetModel(model: Int = 0, targetNum: Int = 0, onSuccess: (() -> Unit)?) {
-
-    }
-
-    /**
-     * 开始连接并获取数据
-     */
-    open fun create(
-        deviceType: String = "",
-        dataListener: ((DeviceTrainBean.DeviceTrainBO) -> Unit),
-        statusListener: DeviceStatusListener? = null,
-    ) {
-        deviceDateBean = BluetoothClientManager.deviceConnectStatus(deviceType)
-        deviceDataListener = dataListener
-        deviceStatusListener = statusListener
-        notifyRegister()
-        if (!deviceDateBean.deviceName.contains("Merach-MR636D")) {
-            onDeviceWrite(true)
-        }
-        deviceHeartRate()
-    }
-
-    /**
-     * 下发指令
-     */
-    protected fun write(
-        byteArray: ByteArray?,
-        onSuccess: (() -> Unit)? = null,
-    ) {
-        if (byteArray == null) {
-            return
-        }
-        deviceDateBean.run {
-            BluetoothClientManager.client.write(
-                address,
-                serviceUUId,
-                characterWrite,
-                byteArray
-            ) {
-                if (it == Constants.REQUEST_SUCCESS) {
-                    onSuccess?.invoke()
-                }
-                logI(TAG,
-                    "write: $serviceUUId $characterWrite ${ByteUtils.byteToString(byteArray)} $it")
-            }
-        }
-    }
-
-    /**
-     *读取
-     */
-    protected fun read(
-        readServiceUUId: UUID,
-        readCharacterUUId: UUID,
-        onSuccess: ((ByteArray) -> Unit)?,
-    ) {
-        deviceDateBean.run {
-            BluetoothClientManager.client.read(
-                address,
-                readServiceUUId,
-                readCharacterUUId) { code, data ->
-                if (code == Constants.REQUEST_SUCCESS) {
-                    onSuccess?.invoke(data)
-                }
-            }
-            logI(TAG, "read $readServiceUUId $readCharacterUUId $address")
-        }
-    }
-
-    /**
-     *  设备发送获取数据指令
-     *  statusCmd 部分设备需要先获取状态
-     */
-    open fun onDeviceCmd() {
-        job?.cancel()
-        job = null
-        job = GlobalScope.launch {
-            dateArray.forEach {
-                if (writeData) {
-                    write(it)
-                }
-                delay(600)
-                onDeviceCmd()
-            }
-        }
-    }
+    protected var mDataListener: ((DeviceTrainBO) -> Unit)? = null
 
     /**
      * 蓝牙的回调
      */
-    protected abstract fun onBluetoothNotify(
-        service: UUID,
-        character: UUID,
-        value: ByteArray,
-        beaconParser: BeaconParser,
+    protected abstract fun onBluetoothNotify(service: UUID, character: UUID, parser: BeaconParser)
+
+    /**
+     * 开始下发指令 isCreate 目前用于跑步机
+     */
+    abstract fun startWrite(isCreate: Boolean)
+
+    /**
+     * 目前智健跑步机速度跟坡度一条指令
+     * speed 速度 resistance 阻力 slope 坡度
+     */
+    abstract fun onControl(
+        speed: Int = 0, resistance: Int = 0, slope: Int = 0, isDelayed: Boolean = false,
     )
 
     /**
-     * 开始获取数据
-     * 华为服务通道订阅数据通知
+     * 跑步机 暂停、继续、开始
      */
-    open fun notifyRegister() {
-        deviceDateBean.run {
-            BluetoothClientManager.client.notify(address,
-                serviceUUId,
-                characterNotify,
-                mNotifyRsp)
-            //华为通道订阅数据通知
-            if (serviceUUId.toString().contains("1826")) {
-                BluetoothClientManager.client.notify(address,
-                    serviceUUId,
-                    string2UUID(D_SERVICE1826_2ADA), mNotifyRsp)
+    open fun onTreadmillControl(isPause: Boolean = false) {}
+
+    /**
+     *00H 正常模式（自由训练,数据不会清除）01H 倒计数 02H 倒计时 03H 超燃脂 (用于J001跳绳) 04H 游戏模式 游戏模式下屏蔽飞梭阻力调节功能
+     */
+    open fun setDeviceModel(model: Int = 0, targetNum: Int = 0, onSuccess: (() -> Unit) = {}) {}
+
+    /**
+     *页面销毁数据清除等
+     */
+    abstract fun onDestroyWrite(): ByteArray?
+
+    override fun onCreate(owner: LifecycleOwner) {
+        initConfig(owner)
+        initDevice()
+        super.onCreate(owner)
+    }
+
+    open fun initConfig(owner: LifecycleOwner) {
+        mLifecycleScope = owner.lifecycleScope
+        LiveDataBus.with<DeviceConnectBean>(CONNECT_BEAN_KEY).observe(owner) {
+            if ((propertyBean.address.isEmpty() && it.isConnect && mDeviceType == it.type) || it.address == propertyBean.address) {
+                initDevice()
             }
-            BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(true,
-                deviceType,
-                address))
-            logI(TAG, "notifyRegister $serviceUUId $characterNotify $address")
         }
     }
 
+    private var needCallBack = false//连接过该设备才需要回调，避免未连接设备进入也收到断开监听
 
-    protected var adr = 0 //当前设备唯一标识
-    protected var len = 0
-    protected var deviceStatus = -1//状态
-    protected var length = 0//数据长度判断是否需要解析当前数据
+    /**
+     * 根据设备状态开启或者断开设备相关交互
+     */
+    open fun initDevice() {
+        val bean = BluetoothManager.getConnectBean(mDeviceType)
+        if (bean.isConnect) {
+            propertyBean = bean
+            notifyRegister()
+            writeHeart()
+            startWrite(true)
+            needCallBack = true
+        } else {
+            mDataScope?.cancel()
+            mHeartScope?.cancel()
+            readyConnect = false
+            notifyBean.status = -1
+            propertyBean.isConnect = false
+        }
+        if (needCallBack) mConnectListener?.invoke(propertyBean.name, bean.isConnect)
+    }
+
+    /**
+     * 写入指令
+     */
+    protected fun write(byteArray: ByteArray?, onSuccess: (() -> Unit)? = null) {
+        if (byteArray == null) {
+            return
+        }
+        propertyBean.run {
+            BluetoothManager.client.write(address, serviceUUID, writeUUID, byteArray) {
+                if (it == Constants.REQUEST_SUCCESS) {
+                    onSuccess?.invoke()
+                }
+                logI(TAG, "write: $serviceUUID $writeUUID ${ByteUtils.byteToString(byteArray)} $it")
+            }
+        }
+    }
+
+    /**
+     *读取指令
+     */
+    protected fun read(serviceUUID: UUID, characterUUId: UUID, onSuccess: ((ByteArray) -> Unit)?) {
+        propertyBean.run {
+            BluetoothManager.client.read(address, serviceUUID, characterUUId) { code, data ->
+                if (code == Constants.REQUEST_SUCCESS) {
+                    onSuccess?.invoke(data)
+                }
+            }
+            logI(TAG, "read $serviceUUID $characterUUId $address")
+        }
+    }
+
+    /**
+     *  设备请求数据指令
+     */
+    protected fun writeData() {
+        if ((mDataScope == null || !mDataScope!!.isActive) && dateArray.size > 0)
+            mDataScope = countDownCoroutines(mLifecycleScope!!, countDownTime = 500, onTick = {
+                write(dateArray[writeIndex % dateArray.size])
+                writeIndex++
+            })
+    }
+
+    /**
+     * 设备心跳间隔20s一次
+     */
+    private fun writeHeart() {
+        if (propertyBean.hasHeartRate && (mHeartScope == null || !mHeartScope!!.isActive))
+            mHeartScope = countDownCoroutines(mLifecycleScope!!, countDownTime = 20000, onTick = {
+                BluetoothManager.client.write(propertyBean.address,
+                    string2UUID(DeviceConstants.D_SERVICE_MRK),
+                    string2UUID(DeviceConstants.D_CHARACTER_HEART_MRK),
+                    writeHeartRate()) {
+                    logD(TAG, "deviceHeartRate: $it")
+                }
+            })
+    }
+
+    /**
+     * 订阅数据通道，华为服务订阅控制通知
+     */
+    open fun notifyRegister() {
+        propertyBean.run {
+            BluetoothManager.client.notify(address, serviceUUID, notifyUUID, mNotifyRsp)
+            //华为通道订阅数据通知
+            if (serviceUUID.toString().contains("1826")) {
+                BluetoothManager.client.notify(address,
+                    serviceUUID,
+                    string2UUID(D_SERVICE1826_2ADA),
+                    mNotifyRsp)
+            }
+            logI(TAG, "notifyRegister $serviceUUID $notifyUUID $address")
+        }
+    }
+
+    protected var dataLength = 0//数据长度判断是否需要解析当前数据
+
+    /**
+     * 数据接收处理
+     */
     private val mNotifyRsp: BleNotifyResponse = object : BleNotifyResponse {
         override fun onResponse(code: Int) {
             logD(TAG, "mNotifyRsp：onResponse：$code")
         }
 
         override fun onNotify(service: UUID, character: UUID, value: ByteArray) {
-            val data = DeviceConvert.bytesToHexString(value)
-            if (service.toString() == DeviceConstants.D_SERVICE_DATA_HEART && refreshData) {
-                onBluetoothNotify(service, character, value, BeaconParser(value))
-            } else if (value.size >= 2) {
-                adr = (value[0].toInt() and 0xff)
-                len = (value[1].toInt() and 0xff)
-                length = value.size
-                if (value.size >= 4) {
-                    deviceStatus = ((value[2].toInt() and 0xff))
-                    if (refreshData) {
-                        onBluetoothNotify(service, character, value, BeaconParser(value))
-                    }
-                }
-                if (data.startsWith("025302")) {
-                    writeToFile("$TAG onWriteStart  跑步机控制回调", data)
+            dataLength = value.size
+            if (isNotifyData) {
+                if (service.toString() == DeviceConstants.D_SERVICE_DATA_HEART) {
+                    onBluetoothNotify(service, character, BeaconParser(value))
+                } else if (dataLength >= 4) {
+                    onBluetoothNotify(service, character, BeaconParser(value))
                 }
             }
             logD(TAG,
-                "mNotifyData: $data 服务特征值: $service $character " +
-                        "refreshData:$refreshData  adr: ${adr.dvToHex()}  len: ${len.dvToHex()} " +
-                        "deviceStatus: ${deviceStatus.dvToHex()} length ${length.dvToHex()}")
+                "mNotifyData: ${DeviceConvert.bytesToHexString(value)} $service $character $isNotifyData")
         }
     }
 
     /**
-     * 设备心跳
+     * 发清除指令 canClear 部分设备不能清除
      */
-    open fun deviceHeartRate() {
-        if (deviceDateBean.hasHeartRate) {
-            deviceHeartJob = GlobalScope.launch(Dispatchers.IO) {
-                BluetoothClientManager.client.write(
-                    deviceDateBean.address,
-                    string2UUID(DeviceConstants.D_SERVICE_MRK),
-                    string2UUID(DeviceConstants.D_CHARACTER_HEART_MRK),
-                    onWriteHeartRate()
-                ) {
-                    logD(TAG, "deviceHeartRate: $it")
-                }
-                delay(20000)
-                deviceHeartJob?.cancel()
-                deviceHeartRate()
-            }
-        }
-    }
-
-    /**
-     * 空踩数据清除并上报
-     * @param canClear 部分设备不能清除
-     * @param onSuccess 指令发送成功回调
-     */
-    open fun onDeviceClear(canClear: Boolean = true, onSuccess: (() -> Unit)? = null) {
+    open fun writeClear(canClear: Boolean = true, onSuccess: (() -> Unit)? = null) {
         if (canClear) {
-            deviceDateBean.run {
-                if (deviceProtocol == 2) {
-                    write(onFTMSControl()) {
-                        write(onFTMSClear()) {
+            propertyBean.run {
+                if (protocol == DeviceConstants.D_SERVICE_TYPE_FTMS) {
+                    write(writeFTMSControl()) {
+                        write(writeFTMSClear()) {
                             //老版本华为单车需要断开连接
-                            if (deviceName.contains("MERACH-MR667", true) ||
-                                deviceName.contains("MERACH MR-667", true)
-                            ) {
-                                BluetoothClientManager.disConnect(address)
+                            if (name.vbContains("MERACH-MR667") || name.vbContains("MERACH MR-667")) {
+                                BluetoothManager.disConnect(false, address, true)
                             }
                             onSuccess?.invoke()
                         }
@@ -294,55 +268,142 @@ abstract class BaseDeviceFunction : LifecycleObserver {
                 } else {
                     write(onDestroyWrite(), onSuccess)
                 }
-                writeToFile("onDeviceClear", "$canClear $deviceType $deviceName")
             }
         }
     }
 
     /**
-     * 控制的时候清除所有指令防止阻塞
-     *@param
-     * Constants.REQUEST_READ，所有读请求
-     * Constants.REQUEST_WRITE，所有写请求
-     *Constants.REQUEST_NOTIFY，所有通知相关的请求
-     *Constants.REQUEST_RSSI，所有读信号强度的请求
-     * 清除所有请求，则传入0
+     * 清除指令 0所有  读取Constants.REQUEST_READ  写请求Constants.REQUEST_WRITE，
+     * 通知Constants.REQUEST_NOTIFY  读信号Constants.REQUEST_RSSI
      */
-    open fun clearAllRequest(clearType: Int = Constants.REQUEST_WRITE) {
-        if (deviceDateBean.address.isNotEmpty())
-            BluetoothClientManager.client.clearRequest(deviceDateBean.address, clearType)
+    private fun clearAllRequest(clearType: Int = Constants.REQUEST_WRITE) {
+        BluetoothManager.client.clearRequest(propertyBean.address, clearType)
+    }
+
+    /**
+     *设置控制并延迟，旋钮的指令保护间隔>200ms isDelayed 是否延迟 自由训练实时数据采集，避免阻力冲突
+     */
+    private var deviceControlScope: Job? = null
+
+    protected fun deviceControl(writeData: ByteArray, isDelayed: Boolean = true) {
+        if (!isDelayed) {
+            write(writeData)
+        } else if (mLifecycleScope != null && propertyBean.isConnect) {
+            deviceControlScope?.cancel()
+            deviceControlScope = mLifecycleScope!!.launch {
+                isRefreshResistance = false
+                delay(300)
+                clearAllRequest()
+                write(writeData)
+                delay(600)
+                isRefreshResistance = true
+                cancel()
+            }
+        }
+    }
+
+    /**
+     * 设备重连 回调状态 1连接中 2连接成功 3连接失败
+     * @param isReconnect 区分视频重连跟主动连接，重连需要后续操作，主动重连直接提示设备断开
+     */
+    fun connect(
+        isReconnect: Boolean = true,
+        connectListener: ((Int, Boolean) -> Unit)? = null,
+        records: DeviceListBean.Records? = null,
+    ) {
+        val mac = records?.mac ?: propertyBean.address
+        LiveDataBus.postValue(STOP_AUTO_KEY, StopAutoBean(true, mac))
+        connectListener?.invoke(if (mac.isEmpty()) 3 else 1, isReconnect)
+        BluetoothManager.client.connect(mac, BleConfigOptions.connectOptions) { code, data ->
+            if (code == Constants.REQUEST_SUCCESS) {
+                BluetoothManager.client.registerConnectStatusListener(mac,
+                    BluetoothManager.mBleStatusListener)
+                //没有连接过，初始化设备信息
+                val name = if (records != null) {
+                    propertyBean.address = records.mac
+                    val heartService = string2UUID(DeviceConstants.D_SERVICE_MRK)
+                    val heartCharacter = string2UUID(DeviceConstants.D_CHARACTER_HEART_MRK)
+                    val heart = data.containsCharacter(heartService, heartCharacter)
+                    BluetoothManager.savaConnectMap(DevicePropertyBean(records.mac,
+                        records.productId,
+                        records.bluetoothName,
+                        data,
+                        heart))
+                    BluetoothManager.initProperty(records.productId,
+                        records.communicationProtocol,
+                        records.otaProtocol,
+                        records.deviceUserRelId)
+                    BluetoothManager.readOtaVersion(records.productId, records.versionEigenValue)
+                    records.bluetoothName
+                } else {
+                    BluetoothManager.getConnectBean(propertyBean.address, false).run {
+                        isConnect = true
+                        name
+                    }
+                }
+                if (name.vbContains("J003")) {
+                    MtuGattCallback(mac)
+                }
+                initDevice()
+                connectListener?.invoke(2, isReconnect)
+            } else {
+                if (isReconnect) initDevice()
+                connectListener?.invoke(3, isReconnect)
+            }
+        }
+    }
+
+    /**
+     * 获取当前设备是否运行
+     */
+    open fun isDeviceRunning(): Boolean {
+        return if (mDeviceType == DeviceConstants.D_FASCIA_GUN) notifyBean.status == STATUS_RUNNING else notifyBean.status == DEVICE_TREADMILL_RUNNING
+    }
+
+    /**
+     * 手动设置数据，当前用于跳绳设置模式
+     */
+    open fun setConnectData(deviceBean: DevicePropertyBean, scope: LifecycleCoroutineScope) {
+        propertyBean = deviceBean
+        mLifecycleScope = scope
+    }
+
+    /**
+     *  注册连接状态
+     */
+    open fun registerConnectListener(listener: (String, Boolean) -> Unit) {
+        mConnectListener = listener
     }
 
     /**
      *状态回调
      */
     open fun registerStatusListener(deviceStatusListener: DeviceStatusListener) {
-        this.deviceStatusListener = deviceStatusListener
+        this.mStatusListener = deviceStatusListener
     }
 
     /**
-     * 训练结束，回调接口置空防止持有activity引用内存泄漏
+     *数据回调回调
      */
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
-        job?.cancel()
-        job = null
-        deviceHeartJob?.cancel()
-        deviceHeartJob = null
-        //解决跑步机结算之前会发送暂停导致无法响应停止指令
-        clearAllRequest()
-        Log.d("ON_DESTROY", "onDestroy: ")
-        onDeviceClear()
-        deviceDateBean.serviceUUId?.run {
-            BluetoothClientManager.client.unnotify(deviceDateBean.address,
-                deviceDateBean.serviceUUId,
-                deviceDateBean.characterNotify) {}
-            BluetoothClientManager.deviceNotify.postValue(DeviceNotifyBean(false,
-                deviceDateBean.deviceType,
-                deviceDateBean.address))
+    open fun registerDataListener(dataListener: ((DeviceTrainBO) -> Unit)) {
+        this.mDataListener = dataListener
+    }
+
+    /**
+     * 清除回调避免持有activity引用内存泄漏
+     */
+    override fun onDestroy(owner: LifecycleOwner) {
+        propertyBean.run {
+            if (serviceUUID != null)
+                BluetoothManager.client.unnotify(address, serviceUUID, notifyUUID) {}
         }
-        refreshData = false
-        deviceDataListener = null
-        deviceStatusListener = null
+        writeClear()
+        isNotifyData = false
+        mLifecycleScope?.cancel()
+        mLifecycleScope = null
+        mDataListener = null
+        mStatusListener = null
+        mConnectListener = null
+        super.onDestroy(owner)
     }
 }

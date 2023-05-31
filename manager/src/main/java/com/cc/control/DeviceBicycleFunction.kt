@@ -1,5 +1,6 @@
 package com.cc.control
 
+
 import com.cc.control.protocol.*
 import com.cc.control.protocol.DeviceConstants.D_SERVICE1826
 import com.cc.control.protocol.DeviceConstants.D_SERVICE_BQ
@@ -7,114 +8,118 @@ import com.cc.control.protocol.DeviceConstants.D_SERVICE_FFFO
 import com.cc.control.protocol.DeviceConstants.D_SERVICE_MRK
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.utils.ByteUtils
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
-import kotlin.experimental.and
 
 /**
- * @Author      : cc
- * @Date        : on 2022-02-20 12:54.
- * @Description :单车协议
+ *  : cc
+ *  : on 2022-02-20 12:54.
+ *  :单车协议
  */
-class DeviceBicycleFunction : BaseDeviceFunction() {
-    override fun onDeviceWrite(isCreate: Boolean) {
-        when (deviceDateBean.deviceProtocol) {
+class DeviceBicycleFunction(device: String) : BaseDeviceFunction(device) {
+    override fun startWrite(isCreate: Boolean) {
+        /**
+         *2022-11立聪确认，兼容Merach-MR636D运行状态再发开始会倒着走
+         */
+        if (propertyBean.serviceUUID == null) return
+        if (propertyBean.name.contains("Merach-MR636D")) {
+            mLifecycleScope?.launch {
+                //解决设备清零之后开启运动获取状态是运行中，导致无法开始
+                delay(1000)
+                read(propertyBean.serviceUUID!!, string2UUID(DeviceConstants.D_SERVICE1826_2AD3)) {
+                    if (it.size >= 2 && it[1].toInt() != 0x0D) {
+                        start()
+                    }
+                }
+            }
+        } else {
+            start()
+        }
+    }
+
+    private fun start() {
+        notifyBean.status = DEVICE_TREADMILL_RUNNING
+        when (propertyBean.protocol) {
             DeviceConstants.D_SERVICE_TYPE_ZJ -> {
                 if (dateArray.isEmpty()) {
-                    dateArray.add(onWriteZJBicycleData())
-                    dateArray.add(onWriteZJBicycleStatus())
+                    dateArray.add(writeZJBicycleData())
+                    dateArray.add(writeZJBicycleStatus())
+                    write(writeZJInfo())
                 }
-                write(onWriteZJModelId(), ::onDeviceCmd)
-            }
-            DeviceConstants.D_SERVICE_TYPE_OTHER -> {
-                //   serviceUUId.toString().equals(D_SERVICE_FFFO, ignoreCase = true)
+                write(readZJModelId(), ::writeData)
             }
             DeviceConstants.D_SERVICE_TYPE_BQ -> {
-                write(onWriteBQBicycleConnect())
+                write(writeBQBicycleConnect())
             }
-            else -> {
-                //开始指令华为部分设备用于结束训练之后恢复连接
-                //单车636D create 发送完恢复然后短时间又发一条会导致设备时间倒计时并暂停
-                //02 - 0x01 停止 0x02暂停
-                //04  Started or Resumed
-                write(onFTMSControl()) {
+            DeviceConstants.D_SERVICE_TYPE_MRK -> {
+
+            }
+            else -> {  //开始指令华为部分设备用于结束训练之后恢复连接
+                write(writeFTMSControl()) {
                     write(ByteUtils.stringToBytes("07"))
                 }
             }
         }
     }
 
-    override fun onDeviceControl(
-        speed: Int,
-        resistance: Int,
-        slope: Int,
-    ) {
-        writeToFile("onDeviceControl 单车",
-            "${deviceDateBean.deviceType} speed: $speed resistance: $resistance slope $slope ${deviceDateBean.deviceProtocol}")
-        GlobalScope.launch {
-            logI(TAG, "write:单车 控制延时")
-            writeData = false
-            delay(300)
-            write(when (deviceDateBean.deviceProtocol) {
-                DeviceConstants.D_SERVICE_TYPE_BQ -> {
-                    if (deviceDateBean.deviceType == DeviceConstants.D_ROW) {
-                        onWriteBQBicycle5Resistance(resistance)
-                    } else {
-                        onWriteBQBicycle6Resistance(resistance)
-                    }
+    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean) {
+        deviceControl(when (propertyBean.protocol) {
+            DeviceConstants.D_SERVICE_TYPE_BQ -> {
+                if (propertyBean.type == DeviceConstants.D_ROW) {
+                    writeBQBicycle5Resistance(resistance)
+                } else {
+                    writeBQBicycle6Resistance(resistance)
                 }
-                DeviceConstants.D_SERVICE_TYPE_FTMS -> {
-                    write(onFTMSControl())
-                    onBicycleControl(resistance)
-                }
-                else -> {
-                    onWriteZJBicycleControl(resistance, slope)
-                }
-            })
-            delay(300)
-            writeData = true
-        }
+            }
+            DeviceConstants.D_SERVICE_TYPE_FTMS -> {
+                write(writeFTMSControl())
+                writeBicycleControl(resistance)
+            }
+            DeviceConstants.D_SERVICE_TYPE_MRK -> {
+                writeMrkControl(resistance)
+            }
+            else -> {
+                writeZJBicycleControl(resistance, slope)
+            }
+        }, isDelayed)
+        writeToFile(TAG,
+            "onControl ${propertyBean.name} $speed $resistance $readyConnect $isDelayed")
     }
 
-    override fun onBluetoothNotify(
-        service: UUID,
-        character: UUID,
-        value: ByteArray,
-        beaconParser: BeaconParser,
-    ) {
+    //目前用于游戏单车
+    override fun setDeviceModel(model: Int, targetNum: Int, onSuccess: (() -> Unit)) {
+        write(writeMrkModel(model))
+    }
+
+    override fun onBluetoothNotify(service: UUID, character: UUID, parser: BeaconParser) {
         when (service.toString()) {
             D_SERVICE_MRK -> {
-                mrkProtocol(value, beaconParser)
-                deviceDataListener?.invoke(deviceNotifyBean)
+                mrkProtocol(parser)
+                mDataListener?.invoke(notifyBean)
             }
             D_SERVICE1826 -> {
-                onFTMSProtocol(deviceNotifyBean,
-                    deviceDateBean.deviceName,
-                    deviceDateBean.deviceType,
-                    beaconParser)
-                deviceDataListener?.invoke(deviceNotifyBean)
+                onFTMSProtocol(notifyBean, propertyBean.name, propertyBean.type, parser)
+                mDataListener?.invoke(notifyBean)
             }
             D_SERVICE_FFFO, D_SERVICE_BQ -> {
-                onFFF0Protocol(deviceNotifyBean,
-                    deviceDateBean.deviceType,
-                    beaconParser,
-                    value.size) { startNotify, byteArray: ByteArray? ->
-                    if (deviceDateBean.deviceProtocol == DeviceConstants.D_SERVICE_TYPE_ZJ) {
-                        deviceDataListener?.invoke(deviceNotifyBean)
-                    } else if (startNotify) {
+                onFFF0Protocol(notifyBean, propertyBean.type, parser, dataLength) { start, array ->
+                    if (propertyBean.protocol == DeviceConstants.D_SERVICE_TYPE_ZJ) {
+                        mDataListener?.invoke(notifyBean)
+                    } else if (start) {
                         if (readyConnect) {
-                            deviceDataListener?.invoke(deviceNotifyBean)
+                            mDataListener?.invoke(notifyBean)
                         } else if (dateArray.isEmpty()) {
-                            byteArray?.run {
-                                dateArray.add(this)
-                            }
-                            onDeviceCmd()
+                            array?.run { dateArray.add(this) }
+                            writeData()
+                            readyConnect = true
+                        } else {
+                            //柏群重连需要重新启动数据交互
+                            writeData()
                             readyConnect = true
                         }
                     } else {
-                        write(byteArray)
+                        write(array)
                     }
                 }
             }
@@ -124,30 +129,31 @@ class DeviceBicycleFunction : BaseDeviceFunction() {
     /**
      * mrk 协议
      */
-    private fun mrkProtocol(value: ByteArray, beaconParser: BeaconParser) {
-        val response = (value[3] and 0xff.toByte()).toInt()
-        val isSuccess = (value[4] and 0xff.toByte()).toInt()
-        if (adr == 0xAA) {
-            //控制状态02 并且设置成功 结果是复位
-            if (deviceStatus == 2 && (isSuccess == 1) && (response and 0x7F == 6)) {
+    private fun mrkProtocol(beaconParser: BeaconParser) {
+        //AA (01/02) 1数据 2 控制
+        if (beaconParser.readByte() == 0xAA) {
+            val length = beaconParser.readByte()
+            val status = beaconParser.readByte()
+            if (status == 2 && (beaconParser.readByte() == 1) && (beaconParser.readByte() and 0x7F == 6)) {
                 return
             }
-            if (deviceStatus != 1) //数据位1
-                return
-        }
-        if (value.size - 2 == len) {
-            onMrkProtocol(deviceNotifyBean, beaconParser, value.size - 5)
+            if (status != 1) return
+            if (dataLength - 2 == length) {
+                onMrkProtocol(notifyBean, beaconParser, dataLength - 5)
+            }
         }
     }
 
     override fun onDestroyWrite(): ByteArray {
-        return when (deviceDateBean.deviceProtocol) {
+        return when (propertyBean.protocol) {
             DeviceConstants.D_SERVICE_TYPE_BQ -> {
-                onWriteBQBicycleClear()
+                writeBQBicycleClear()
+            }
+            DeviceConstants.D_SERVICE_TYPE_MRK -> {
+                writeMrkStop()
             }
             else -> {
-                //华为base处理了,只需要处理ZJ
-                onWriteZJBicycleClear()
+                writeZJBicycleClear()
             }
         }
     }

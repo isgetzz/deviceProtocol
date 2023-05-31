@@ -4,9 +4,6 @@ import com.cc.control.logD
 import com.cc.control.protocol.*
 import com.cc.control.protocol.DeviceConvert.*
 import com.inuker.bluetooth.library.utils.ByteUtils.stringToBytes
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.math.ceil
 
@@ -38,7 +35,7 @@ class LSWOta : BaseDeviceOta() {
         const val D_OTA_SUCCESS_LSW = "05"//当前总包数 cmd
     }
 
-    override fun onFile(filePath: String) {
+    override fun initFilePath(filePath: String) {
         if (!filePath.isFileExist()) {
             return
         }
@@ -46,10 +43,10 @@ class LSWOta : BaseDeviceOta() {
             val sha32 = getSHA256()
             //源文件用sha256获得32字节、这里需要分成两包
             totalLength = ceil((size * 1.0 / writeLength)).toInt()
-            val littleLength = ceil(writeLength / (deviceConnectBean.mtu - 4.0)).toInt()//4096多少mtu
+            val littleLength = ceil(writeLength / (devicePropertyBean.mtu - 4.0)).toInt()//4096多少mtu
             val residueLength = size % writeLength //取最后剩余byte
             writeTotalSize =
-                (size / writeLength * littleLength + ceil(residueLength / (deviceConnectBean.mtu - 4.0))).toInt()
+                (size / writeLength * littleLength + ceil(residueLength / (devicePropertyBean.mtu - 4.0))).toInt()
             dvSplitByteArr(writeLength).run {
                 writeByteArrayList = this
             }
@@ -59,7 +56,7 @@ class LSWOta : BaseDeviceOta() {
                     sha32.length)),
                     true) {//成功
                     write(stringToBytes(D_OTA_SECOND_LSW + intTo4HexString(size) + intTo4HexString(
-                        deviceConnectBean.mtu - 4)),
+                        devicePropertyBean.mtu - 4)),
                         true)
                 }
             }
@@ -70,39 +67,33 @@ class LSWOta : BaseDeviceOta() {
      * 每个扇区 length=4096/(mtu-4)
      */
     private fun otaFormat() {
-        job?.cancel()
-        job = null
         if (isFinish) {
             return
         }
-        job = GlobalScope.launch(context = Dispatchers.IO) {
-            writeByteArrayList.let {
-                //向上取整扇区/mtu-4
-                logD(TAG, "otaFormat-1:当前扇区 $writeLittlePosition  扇区总长度$writeLittleLength")
-                if (writeLittlePosition < writeLittleLength) {
-                    writeNoRsp(writeLittleByteArrayList[writeLittlePosition],
-                        writeTotalSize,
-                        writeProgress,
-                        writeLittleLength,
-                        writeLittlePosition) {
-                        writeProgress++
-                        writeLittlePosition++
+        writeByteArrayList.let {
+            //向上取整扇区/mtu-4
+            logD(TAG, "otaFormat-1:当前扇区 $writeLittlePosition  扇区总长度$writeLittleLength")
+            if (writeLittlePosition < writeLittleLength) {
+                writeNoRsp(writeLittleByteArrayList[writeLittlePosition],
+                    writeTotalSize,
+                    writeProgress) {
+                    writeProgress++
+                    writeLittlePosition++
+                    otaFormat()
+                }
+            } else {
+                read {
+                    if (ackCheck(it, writeLength, devicePropertyBean.mtu - 4)) {
+                        writeLittlePosition = checkPosition(it, writeLittlePosition)
                         otaFormat()
-                    }
-                } else {
-                    read {
-                        if (ackCheck(it, writeLength, deviceConnectBean.mtu - 4)) {
-                            writeLittlePosition = checkPosition(it, writeLittlePosition)
-                            otaFormat()
+                    } else {
+                        writeTotalPosition++
+                        if (writeTotalPosition < totalLength) {
+                            writePosition()
                         } else {
-                            writeTotalPosition++
-                            if (writeTotalPosition < totalLength) {
-                                writePosition()
-                            } else {
-                                write(stringToBytes(D_OTA_SUCCESS_LSW), true) {
-                                    deviceOtaListener?.invoke(D_OTA_SUCCESS, 0)
-                                    resetUpdate()
-                                }
+                            write(stringToBytes(D_OTA_SUCCESS_LSW), true) {
+                                deviceOtaListener?.invoke(D_OTA_SUCCESS, 0)
+                                resetUpdate()
                             }
                         }
                     }
@@ -124,7 +115,7 @@ class LSWOta : BaseDeviceOta() {
     private fun writePosition() {
         writeLittlePosition = 0
         write(stringToBytes(D_OTA_INDEX_LSW + intTo2HexString(writeTotalPosition)), true) {
-            writeByteArrayList[writeTotalPosition].dvPositionSplitByte(deviceConnectBean.mtu - 4)
+            writeByteArrayList[writeTotalPosition].dvPositionSplitByte(devicePropertyBean.mtu - 4)
                 .run {
                     writeLittleLength = size
                     writeLittleByteArrayList = this

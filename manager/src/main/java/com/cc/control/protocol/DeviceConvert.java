@@ -47,14 +47,11 @@ public class DeviceConvert {
     }
 
     /**
-     * 取指定位0开始
-     *
      * @param num 数据
-     * @param i   第几位
-     * @return
+     * @param bit 0位开始   11100100 低位到高位 0代表 第0位
      */
-    public static boolean getBit(int num, int i) {
-        return ((num >> i) & 1) == 1;
+    public static int getBit(int num, int bit) {
+        return ((num >> bit) & 1);
 
     }
 

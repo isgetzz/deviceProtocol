@@ -11,4 +11,4 @@
 进程持有一个Service，这个Service处于这几种状态:①Service与用户正在交互的Activity绑定。②Service是在前台运行的，即它调用了 startForeground()
 。③Service正在执行它的生命周期回调函数（onCreate(), onStart(), or onDestroy()）。
 
-进程持有一个broadcastReceiver，这个broadcastReceiver正在执行它的 onReceive() 方法。     
+进程持有一个broadcastReceiver，这个broadcastReceiver正在执行它的 onReceive() 方法。

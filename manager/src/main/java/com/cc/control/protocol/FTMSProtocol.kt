@@ -1,6 +1,6 @@
 package com.cc.control.protocol
 
-import com.cc.control.bean.DeviceTrainBean
+import com.cc.control.bean.DeviceTrainBO
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.utils.ByteUtils
 import kotlin.math.max
@@ -13,7 +13,7 @@ import kotlin.math.min
  *FTMS https://device.harmonyos.com/cn/docs/devicepartner/DevicePartner-Guides/bluetooth-modul-develop-0000001209983499#section14842195055213
  */
 fun onFTMSProtocol(
-    deviceNotifyBean: DeviceTrainBean.DeviceTrainBO,
+    deviceNotifyBean: DeviceTrainBO,
     deviceName: String,
     deviceType: String,
     beaconParser: BeaconParser,
@@ -31,8 +31,8 @@ fun onFTMSProtocol(
                 if (adr shr 2 and 1 == 1) {
                     //636需要0.5单位值基础再除以2
                     val divisor =
-                        if (adr == 0x0bfe && deviceName.contains("Merach-MR636") && !deviceName.contains(
-                                "Merach-MR636D")
+                        if (adr == 0x0bfe && deviceName.contains("Merach-MR636") &&
+                            !deviceName.contains("Merach-MR636D")
                         ) 4 else 2
                     //当前SPM、踏频 单位0.5
                     spm = (beaconParser.readShort() / divisor).coerceAtMost(200)
@@ -190,14 +190,14 @@ fun onFTMSProtocol(
 /**
  * 华为控制前置指令
  */
-fun onFTMSControl(): ByteArray {
+fun writeFTMSControl(): ByteArray {
     return ByteUtils.stringToBytes("00")
 }
 
 /**
  * 华为清除数据
  */
-fun onFTMSClear(): ByteArray {
+fun writeFTMSClear(): ByteArray {
     return ByteUtils.stringToBytes("0801")
 }
 
@@ -205,6 +205,6 @@ fun onFTMSClear(): ByteArray {
  * 单车
  * 华为控制
  */
-fun onBicycleControl(resistance: Int): ByteArray {
+fun writeBicycleControl(resistance: Int): ByteArray {
     return ByteUtils.stringToBytes(DeviceConvert.intArrToHexString(0x04, resistance))
 }

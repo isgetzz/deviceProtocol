@@ -3,7 +3,7 @@ package com.cc.control
 import android.content.Context
 import android.os.Environment
 import android.util.Log
-import com.cc.control.BluetoothClientManager.isShowLog
+import com.cc.control.BluetoothManager.isShowLog
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -38,7 +38,8 @@ fun logI(tag: String, content: String, showLog: Boolean = false) {
 private val dateFormatFile: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US) //日期格式;
 private val dateFormatHour: SimpleDateFormat =
     SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US) //日期格式;
-private val logFilePath = getFilePath(BluetoothClientManager.app) + "/Logs"
+var logPathName = "log"
+private val logFilePath = getFilePath(BluetoothManager.mApplication) + "/$logPathName"
 private val date = Date()
 
 /**
@@ -75,7 +76,7 @@ fun writeToFile(tag: String, msg: String) {
  * @return
  */
 fun getFilePath(context: Context): String? {
-    return if (Environment.MEDIA_MOUNTED == Environment.MEDIA_MOUNTED || !Environment.isExternalStorageRemovable()) {
+    return if (!Environment.isExternalStorageRemovable()) {
         //外部储存可用
         context.getExternalFilesDir(null)!!.path //获得外部存储路径
     } else {

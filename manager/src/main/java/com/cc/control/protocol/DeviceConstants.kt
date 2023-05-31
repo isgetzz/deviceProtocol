@@ -38,17 +38,19 @@ object DeviceConstants {
     const val D_TRAIN_NUM = 1 //倒计数
     const val D_TRAIN_TIME = 2 //倒计时
 
-    const val D_TRAIN_SLEEP = 78 //休眠数据上报
-    const val D_TRAIN_FINISH = 77 //训练完成
-    const val D_TRAIN_ADD = 79 //上报数据不退出页面
-    const val D_TRAIN_RECONNECT = 80 //重连上报数据
-    const val D_TARGET_FINISH = 76 //目标完成
+    //协议数据类型
+    const val D_SERVICE_TYPE_MRK = 1
+    const val D_SERVICE_TYPE_FTMS = 2
+    const val D_SERVICE_TYPE_ZJ = 3
+    const val D_SERVICE_TYPE_BQ = 4
+    const val D_SERVICE_TYPE_OTHER = 5
+    const val D_SERVICE_TYPE_FASCIA = 6
+    const val D_SERVICE_TYPE_HEART = 102
 
     //公司协议
     const val D_SERVICE_MRK = "59554c55-8000-6666-8888-4d4552414348"
-    const val D_CHARACTER_HEART_MRK = "59554c55-0000-6666-8888-4d4552414348" //心跳包特征自己
+    const val D_CHARACTER_HEART_MRK = "59554c55-0000-6666-8888-4d4552414348" //心跳包特征/历史报文数据
     const val D_CHARACTER_DATA_MRK = "59554c55-0001-6666-8888-4d4552414348" //数据
-    const val D_CHARACTER_HISTORY_MRK = "59554c55-0000-6666-8888-4d4552414348" //历史报文数据
 
     //柏群
     const val D_SERVICE_BQ = "49535343-fe7d-4ae5-8fa9-9fafd205e455"
@@ -113,12 +115,4 @@ object DeviceConstants {
     //心率带电量
     const val D_SERVICE_ELECTRIC_HEART = "0000180f-0000-1000-8000-00805f9b34fb"
     const val D_CHARACTER_ELECTRIC_HEART = "00002a19-0000-1000-8000-00805f9b34fb"
-
-    const val D_SERVICE_TYPE_MRK = 1 //麦瑞克
-    const val D_SERVICE_TYPE_FTMS = 2//华为
-    const val D_SERVICE_TYPE_ZJ = 3//智健
-    const val D_SERVICE_TYPE_BQ = 4//柏群
-    const val D_SERVICE_TYPE_OTHER = 5//其他类型，华为或者智健
-    const val D_SERVICE_TYPE_FASCIA = 6//筋膜枪
-
 }

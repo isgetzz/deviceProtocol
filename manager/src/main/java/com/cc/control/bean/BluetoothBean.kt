@@ -9,9 +9,7 @@ import java.io.Serializable
  * @date 2022-7-31
  * @explain 搜索设备bean
  */
-class BluetoothBean(device: BluetoothDevice?) : SearchResult(device) {
-    var equipmentInfo: DeviceDetails? = null
-
+ class BluetoothBean(device: BluetoothDevice) : SearchResult(device) {
     class DeviceDetails(
         var id: String = "",
         var twoTypeId: String = "",
@@ -21,13 +19,10 @@ class BluetoothBean(device: BluetoothDevice?) : SearchResult(device) {
         var isMerach: Int = 0,
         var twoTypeName: String = "",
         var oneLevelTypeId: String = "",//大类Id,
-
         var oneLevelTypeName: String = "", //大类名称
-
         var mac: String = "",
         var communicationProtocol: Int = 0,
         var otaType: Int = 0,
         var eigenValue: Int = 0, // 1：2a26 ,2:2a28
-
     ) : Serializable
 }
