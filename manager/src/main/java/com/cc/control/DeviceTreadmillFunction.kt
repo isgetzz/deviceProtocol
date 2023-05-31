@@ -19,11 +19,6 @@ open class DeviceTreadmillFunction(device: String) : BaseDeviceFunction(device) 
             write(writeTreadmillData())
         } else {
             onWriteStart()
-        } else {
-            //兼容X3需要下发请求指令
-            write(onWriteZJModelId()) {
-                write(onWriteTreadmillData())
-            }
         }
     }
 
