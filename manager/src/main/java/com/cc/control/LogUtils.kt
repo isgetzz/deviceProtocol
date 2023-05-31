@@ -38,7 +38,8 @@ fun logI(tag: String, content: String, showLog: Boolean = false) {
 private val dateFormatFile: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US) //日期格式;
 private val dateFormatHour: SimpleDateFormat =
     SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US) //日期格式;
-private val logFilePath = getFilePath(BluetoothManager.mApplication) + "/Logs"
+var logPathName = "log"
+private val logFilePath = getFilePath(BluetoothManager.mApplication) + "/$logPathName"
 private val date = Date()
 
 /**

@@ -66,9 +66,10 @@ object BluetoothManager {
     /**
      * 必须先初始化不然无法引用context
      */
-    fun initDeviceManager(app: Application, showLog: Boolean = false) {
+    fun initDeviceManager(app: Application, showLog: Boolean = false, logPath: String = "log") {
         mApplication = app
         isShowLog = showLog
+        logPathName = logPath
         client.registerBluetoothStateListener(object : BluetoothStateListener() {
             override fun onBluetoothStateChanged(openOrClosed: Boolean) {
                 LiveDataBus.postValue(BLUETOOTH_STATUS_KEY, openOrClosed)
