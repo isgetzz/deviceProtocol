@@ -30,6 +30,11 @@ object BluetoothManager {
     const val TAG = "BluetoothManager"
 
     /**
+     * 当前运动设备
+     */
+    var deviceSportType = ""
+
+    /**
      * 蓝牙状态监听
      */
     val mBleStatusListener by lazy {

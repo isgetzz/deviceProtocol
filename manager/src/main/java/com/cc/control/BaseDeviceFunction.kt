@@ -116,6 +116,7 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
     override fun onCreate(owner: LifecycleOwner) {
         initConfig(owner)
         initDevice()
+        BluetoothManager.deviceSportType = mDeviceType
         super.onCreate(owner)
     }
 
@@ -186,8 +187,8 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
      *  设备请求数据指令
      */
     protected fun writeData() {
-        if ((mDataScope == null || !mDataScope!!.isActive) && dateArray.size > 0)
-            mDataScope = countDownCoroutines(mLifecycleScope!!, countDownTime = 500, onTick = {
+        if ((mDataScope == null || !mDataScope!!.isActive) && dateArray.size > 0) mDataScope =
+            countDownCoroutines(mLifecycleScope!!, countDownTime = 500, onTick = {
                 write(dateArray[writeIndex % dateArray.size])
                 writeIndex++
             })
@@ -197,8 +198,8 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
      * 设备心跳间隔20s一次
      */
     private fun writeHeart() {
-        if (propertyBean.hasHeartRate && (mHeartScope == null || !mHeartScope!!.isActive))
-            mHeartScope = countDownCoroutines(mLifecycleScope!!, countDownTime = 20000, onTick = {
+        if (propertyBean.hasHeartRate && (mHeartScope == null || !mHeartScope!!.isActive)) mHeartScope =
+            countDownCoroutines(mLifecycleScope!!, countDownTime = 20000, onTick = {
                 BluetoothManager.client.write(propertyBean.address,
                     string2UUID(DeviceConstants.D_SERVICE_MRK),
                     string2UUID(DeviceConstants.D_CHARACTER_HEART_MRK),
@@ -394,11 +395,13 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
      */
     override fun onDestroy(owner: LifecycleOwner) {
         propertyBean.run {
-            if (serviceUUID != null)
-                BluetoothManager.client.unnotify(address, serviceUUID, notifyUUID) {}
+            if (serviceUUID != null) BluetoothManager.client.unnotify(address,
+                serviceUUID,
+                notifyUUID) {}
         }
         writeClear()
         isNotifyData = false
+        BluetoothManager.deviceSportType = ""
         mLifecycleScope?.cancel()
         mLifecycleScope = null
         mDataListener = null
