@@ -317,8 +317,7 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
         connectListener?.invoke(if (mac.isEmpty()) 3 else 1, isReconnect)
         BluetoothManager.client.connect(mac, BleConfigOptions.connectOptions) { code, data ->
             if (code == Constants.REQUEST_SUCCESS) {
-                BluetoothManager.client.registerConnectStatusListener(mac,
-                    BluetoothManager.mBleStatusListener)
+                BluetoothManager.client.registerConnectStatusListener(mac, BluetoothManager.mBleStatusListener)
                 //没有连接过，初始化设备信息
                 val name = if (records != null) {
                     propertyBean.address = records.mac
