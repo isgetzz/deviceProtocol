@@ -337,10 +337,11 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
                     BluetoothManager.readOtaVersion(records.productId, records.versionEigenValue)
                     records.bluetoothName
                 } else {
-                    BluetoothManager.getConnectBean(propertyBean.address, false).run {
+                    val bean = BluetoothManager.getConnectBean(propertyBean.address, false).apply {
                         isConnect = true
-                        name
                     }
+                    initDevice()
+                    bean.name
                 }
                 if (name.vbContains("J003")) {
                     MtuGattCallback(mac)
