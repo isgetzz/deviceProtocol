@@ -345,7 +345,6 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
                 if (name.vbContains("J003")) {
                     MtuGattCallback(mac)
                 }
-                initDevice()
                 connectListener?.invoke(2, isReconnect)
             } else {
                 if (isReconnect) initDevice()
