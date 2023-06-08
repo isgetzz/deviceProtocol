@@ -116,7 +116,6 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
     override fun onCreate(owner: LifecycleOwner) {
         initConfig(owner)
         initDevice()
-        BluetoothManager.deviceSportType = mDeviceType
         super.onCreate(owner)
     }
 
@@ -350,6 +349,7 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
                 if (isReconnect) initDevice()
                 connectListener?.invoke(3, isReconnect)
             }
+            writeToFile(TAG, "bluetoothConnect:$code")
         }
     }
 
@@ -400,7 +400,6 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
         }
         writeClear()
         isNotifyData = false
-        BluetoothManager.deviceSportType = ""
         mLifecycleScope?.cancel()
         mLifecycleScope = null
         mDataListener = null

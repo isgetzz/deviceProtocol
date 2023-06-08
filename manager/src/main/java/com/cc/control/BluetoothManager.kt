@@ -28,12 +28,6 @@ import java.util.*
 object BluetoothManager {
     private var mClient: BluetoothClient? = null
     const val TAG = "BluetoothManager"
-
-    /**
-     * 当前运动设备
-     */
-    var deviceSportType = ""
-
     /**
      * 蓝牙状态监听
      */
@@ -160,6 +154,7 @@ object BluetoothManager {
             } else {
                 LiveDataBus.postValue(CONNECT_LISTENER_KEY, bean)
             }
+            writeToFile(TAG, "bluetoothConnect:$code")
         }
     }
 
