@@ -7,12 +7,12 @@ plugins {
 }
 group = 'com.github.cc000000'
 android {
-    compileSdkVersion 33
+    compileSdkVersion 31
     buildToolsVersion "30.0.3"
 
     defaultConfig {
         minSdkVersion 22
-        targetSdkVersion 33
+        targetSdkVersion 31
     }
 
     buildTypes {
