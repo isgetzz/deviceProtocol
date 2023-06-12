@@ -6,12 +6,12 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33
     buildToolsVersion "30.0.3"
     defaultConfig {
         applicationId "com.cc.device"
         minSdk 22
-        targetSdk 31
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
