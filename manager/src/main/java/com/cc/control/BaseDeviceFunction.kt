@@ -247,6 +247,8 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
             notifyBean.originalData =
                 "接收数据=$isNotifyData 时间戳${System.currentTimeMillis()} 服务值=$service 特征值=$character " +
                         "数据=$${DeviceConvert.bytesToHexString(value)}"
+            writeToFile(TAG,
+                "mNotifyData: ${DeviceConvert.bytesToHexString(value)} $service $character $isNotifyData")
         }
     }
 
