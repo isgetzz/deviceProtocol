@@ -244,8 +244,9 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
                     onBluetoothNotify(service, character, BeaconParser(value))
                 }
             }
-            writeToFile(TAG,
-                "mNotifyData: ${DeviceConvert.bytesToHexString(value)} $service $character $isNotifyData")
+            notifyBean.originalData =
+                "接收数据=$isNotifyData 时间戳${System.currentTimeMillis()} 服务值=$service 特征值=$character " +
+                        "数据=$${DeviceConvert.bytesToHexString(value)}"
         }
     }
 

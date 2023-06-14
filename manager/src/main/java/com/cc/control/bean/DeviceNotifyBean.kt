@@ -41,6 +41,7 @@ data class DeviceTrainBO(
     var direction: Int = -1,//摇摆方向 00H：直线 01H：左 02H：右
     var press: Int = -1,//00H：存在按压信号
     var unitDistance: Int = -1,//设备类型0：公⾥，1：英⾥
+    var originalData: String = "",
 )
 
 
