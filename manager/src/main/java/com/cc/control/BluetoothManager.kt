@@ -258,6 +258,7 @@ object BluetoothManager {
             deviceConnectMap[type] = this
             val bean = DeviceConnectBean(address, type, name, true, deviceRelId = deviceUserRelId)
             LiveDataBus.postValue(CONNECT_BEAN_KEY, bean)
+            writeToFile(TAG,"$type $mProtocol $mOtaType")
         }
     }
 
