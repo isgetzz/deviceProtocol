@@ -21,6 +21,7 @@ object LiveDataBus {
     const val HEART_DISCONNECT_KEY = "HEART_DISCONNECT_KEY"//判断心率带主动被断开还是
     const val CONNECT_LISTENER_KEY = "CONNECT_LISTENER_KEY"//自动、手动连接状态回调，连接中、连接失败、连接成功
     const val DEVICE_NEED_OTA = "DEVICE_START_OTA"//需要ota
+    const val BACKGROUND_AUTO_CONNECT = "BACKGROUND_AUTO_CONNECT"//切换后台重连判断
 
     /**
      * 因为只有当前页面homeFragment跟设备详情的时候才需要

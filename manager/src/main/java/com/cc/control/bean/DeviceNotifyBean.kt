@@ -27,6 +27,7 @@ data class DeviceTrainBO(
     var power: Float = 0f, //功率
     var avgPower: Float = 0f, //平均功率
     var energy: Float = 0f, //消耗：kcal
+    var rateKcal: Float = 0f, //消耗：kcal
     var deviceTime: Long = 0,//设备时长：秒
     var deviceRate: Int = 0, //设备心率
     var rate: Int = 0,//心率设备心率
@@ -40,6 +41,7 @@ data class DeviceTrainBO(
     var direction: Int = -1,//摇摆方向 00H：直线 01H：左 02H：右
     var press: Int = -1,//00H：存在按压信号
     var unitDistance: Int = -1,//设备类型0：公⾥，1：英⾥
+    var originalData: String = "",
 )
 
 

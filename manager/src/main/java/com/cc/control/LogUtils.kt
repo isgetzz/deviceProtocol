@@ -47,7 +47,7 @@ private val date = Date()
  */
 fun writeToFile(tag: String, msg: String) {
     val data = dateFormatFile.format(date)
-    val fileName = "$logFilePath/log_$data.log" //log日志名，使用时间命名，保证不重复
+    val fileName = "$logFilePath/$data.log" //log日志名，使用时间命名，保证不重复
     val file = File(logFilePath)
     if (!file.exists()) {
         file.mkdirs()

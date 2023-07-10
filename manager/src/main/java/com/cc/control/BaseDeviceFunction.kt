@@ -186,8 +186,8 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
      *  设备请求数据指令
      */
     protected fun writeData() {
-        if ((mDataScope == null || !mDataScope!!.isActive) && dateArray.size > 0)
-            mDataScope = countDownCoroutines(mLifecycleScope!!, countDownTime = 500, onTick = {
+        if ((mDataScope == null || !mDataScope!!.isActive) && dateArray.size > 0) mDataScope =
+            countDownCoroutines(mLifecycleScope!!, countDownTime = 500, onTick = {
                 write(dateArray[writeIndex % dateArray.size])
                 writeIndex++
             })
@@ -197,8 +197,8 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
      * 设备心跳间隔20s一次
      */
     private fun writeHeart() {
-        if (propertyBean.hasHeartRate && (mHeartScope == null || !mHeartScope!!.isActive))
-            mHeartScope = countDownCoroutines(mLifecycleScope!!, countDownTime = 20000, onTick = {
+        if (propertyBean.hasHeartRate && (mHeartScope == null || !mHeartScope!!.isActive)) mHeartScope =
+            countDownCoroutines(mLifecycleScope!!, countDownTime = 20000, onTick = {
                 BluetoothManager.client.write(propertyBean.address,
                     string2UUID(DeviceConstants.D_SERVICE_MRK),
                     string2UUID(DeviceConstants.D_CHARACTER_HEART_MRK),
@@ -244,7 +244,10 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
                     onBluetoothNotify(service, character, BeaconParser(value))
                 }
             }
-            logD(TAG,
+            notifyBean.originalData =
+                "接收数据=$isNotifyData 时间戳${System.currentTimeMillis()} 服务值=$service 特征值=$character " +
+                        "数据=${DeviceConvert.bytesToHexString(value)}"
+            writeToFile(TAG,
                 "mNotifyData: ${DeviceConvert.bytesToHexString(value)} $service $character $isNotifyData")
         }
     }
@@ -336,20 +339,21 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
                     BluetoothManager.readOtaVersion(records.productId, records.versionEigenValue)
                     records.bluetoothName
                 } else {
-                    BluetoothManager.getConnectBean(propertyBean.address, false).run {
+                    val bean = BluetoothManager.getConnectBean(propertyBean.address, false).apply {
                         isConnect = true
-                        name
                     }
+                    initDevice()
+                    bean.name
                 }
                 if (name.vbContains("J003")) {
                     MtuGattCallback(mac)
                 }
-                initDevice()
                 connectListener?.invoke(2, isReconnect)
             } else {
                 if (isReconnect) initDevice()
                 connectListener?.invoke(3, isReconnect)
             }
+            writeToFile(TAG, "bluetoothConnect:$code")
         }
     }
 
@@ -394,8 +398,11 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
      */
     override fun onDestroy(owner: LifecycleOwner) {
         propertyBean.run {
-            if (serviceUUID != null)
-                BluetoothManager.client.unnotify(address, serviceUUID, notifyUUID) {}
+            if (serviceUUID != null) BluetoothManager.client.unnotify(address,
+                serviceUUID,
+                notifyUUID) {}
+            writeToFile(TAG,
+                "onDestroy: $$serviceUUID $writeUUID $notifyUUID $name $type $protocol")
         }
         writeClear()
         isNotifyData = false
