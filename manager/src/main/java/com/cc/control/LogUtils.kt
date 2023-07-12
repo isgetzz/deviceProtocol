@@ -70,16 +70,17 @@ fun writeToFile(tag: String, msg: String) {
     logD("writeToFile: $tag", msg)
 }
 
+
 /**
  * 获得文件存储路径
- *
- * @return
+ * 私有目录storage/sdcard/Android/data/包名，APP卸载后存储的数据文件会一起删除，4.4以后无需申请
  */
 fun getFilePath(context: Context): String? {
     return if (!Environment.isExternalStorageRemovable()) {
-        //外部储存可用
-        context.getExternalFilesDir(null)!!.path //获得外部存储路径
+        //外部存储私有路径
+        context.getExternalFilesDir(null)!!.path
     } else {
-        context.filesDir.path //直接存在/data/data里，非root手机是看不到的
+        //安装目录 data/data/包名/
+        context.filesDir.path
     }
 }
