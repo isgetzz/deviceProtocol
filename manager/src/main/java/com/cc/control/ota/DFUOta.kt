@@ -112,6 +112,7 @@ class DFUOta : BaseDeviceOta() {
                                 DfuServiceInitiator(devicePropertyBean.address)
                                     .setDeviceName(devicePropertyBean.name)
                                     .setKeepBond(false)
+                                    .setDisableNotification(false)
                                     .setForeground(false)
                                     .setForceDfu(false)
                                     .setPacketsReceiptNotificationsEnabled(Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
