@@ -114,6 +114,7 @@ class DFUOta : BaseDeviceOta() {
                                     .setKeepBond(false)
                                     .setForeground(false)
                                     .setForceDfu(false)
+                                    .setDisableNotification(false)
                                     .setPacketsReceiptNotificationsEnabled(Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
                                     .setPacketsReceiptNotificationsValue(DfuServiceInitiator.DEFAULT_PRN_VALUE)
                                     .setPrepareDataObjectDelay(400)
