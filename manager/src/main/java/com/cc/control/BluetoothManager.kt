@@ -19,6 +19,7 @@ import com.inuker.bluetooth.library.Constants
 import com.inuker.bluetooth.library.connect.listener.BluetoothStateListener
 import com.inuker.bluetooth.library.search.SearchResult
 import com.inuker.bluetooth.library.search.response.SearchResponse
+import com.peng.ppscale.business.ble.BleOptions
 import java.util.*
 
 /**
@@ -28,6 +29,7 @@ import java.util.*
 object BluetoothManager {
     private var mClient: BluetoothClient? = null
     const val TAG = "BluetoothManager"
+
     /**
      * 蓝牙状态监听
      */
@@ -258,7 +260,7 @@ object BluetoothManager {
             deviceConnectMap[type] = this
             val bean = DeviceConnectBean(address, type, name, true, deviceRelId = deviceUserRelId)
             LiveDataBus.postValue(CONNECT_BEAN_KEY, bean)
-            writeToFile(TAG,"$type $mProtocol $mOtaType")
+            writeToFile(TAG, "$type $mProtocol $mOtaType")
         }
     }
 
@@ -326,6 +328,9 @@ object BluetoothManager {
 
             override fun onSearchCanceled() {
                 if (needSearch) listener.invoke("", "")
+            }
+
+            override fun onSearchFail(p0: Int) {
             }
         })
     }
@@ -422,4 +427,15 @@ object BluetoothManager {
     fun savaConnectMap(bean: DevicePropertyBean) {
         deviceConnectMap[bean.type] = bean
     }
+
+    /**
+     * 乐福体脂秤配置
+     */
+    fun getBleOptions(): BleOptions {
+        return BleOptions.Builder()
+            .setSearchTag(BleOptions.SEARCH_TAG_NORMAL)
+            //.setSearchTag(BleOptions.SEARCH_TAG_DIRECT_CONNECT)//direct connection
+            .build()
+    }
+
 }
