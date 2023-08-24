@@ -233,23 +233,22 @@ class MainActivity2 : AppCompatActivity() {
             } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateWritable) {
                 Logger.d(getString(R.string.writable))
                 //可写状态，可以发送指令，例如切换单位，获取历史数据等
-                sendUnitDataScale(deviceModel,
-                    PPBleSendResultCallBack { sendState ->
-                        when (sendState) {
-                            PPScaleSendState.PP_SEND_FAIL -> {
-                                //Failed to send
-                            }
-                            PPScaleSendState.PP_SEND_SUCCESS -> {
-                                //sentSuccessfully
-                            }
-                            PPScaleSendState.PP_DEVICE_ERROR -> {
-                                //Device error, indicating that the command is not supported
-                            }
-                            PPScaleSendState.PP_DEVICE_NO_CONNECT -> {
-                                //deviceNotConnected
-                            }
+                sendUnitDataScale(deviceModel) { sendState ->
+                    when (sendState) {
+                        PPScaleSendState.PP_SEND_FAIL -> {
+                            //Failed to send
                         }
-                    })
+                        PPScaleSendState.PP_SEND_SUCCESS -> {
+                            //sentSuccessfully
+                        }
+                        PPScaleSendState.PP_DEVICE_ERROR -> {
+                            //Device error, indicating that the command is not supported
+                        }
+                        PPScaleSendState.PP_DEVICE_NO_CONNECT -> {
+                            //deviceNotConnected
+                        }
+                    }
+                }
             } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnectable) {
                 Logger.d(getString(R.string.Connectable))
                 //连接，在ppBleWorkState == PPBleWorkState.PPBleWorkStateWritable时开始发送数据

@@ -39,18 +39,18 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     private var initScaleSDK = false    // 初始化SDK 体脂秤
-    private var onMeasureResult: ((ICWeightData) -> Unit)? = null//测量结果回调
-    private var onScanResult: ((ICScanDeviceInfo) -> Unit)? = null//搜索结果回调
+    private var onMeasureResultWL: ((ICWeightData) -> Unit)? = null//测量结果回调
+    private var onMeasureResultLF: ((PPDeviceModel) -> Unit)? = null//测量结果回调
+    private var onScanResultLF: ((PPDeviceModel) -> Unit)? = null//搜索结果回调 乐福
+    private var onScanResultWL: ((ICScanDeviceInfo) -> Unit)? = null//搜索结果回调 沃莱
     private val unitType: PPUnitType = PPUnitType.Unit_KG
     private var searchType = 2//0.绑定 2.连接
-
 
     //乐福体脂秤
     private val ppScale by lazy {
         PPScale.Builder(BluetoothManager.mApplication)
             .setProtocalFilterImpl(getProtocolFilter())
             .setBleOptions(getBleOptions())
-            .setDeviceList(listOf(""))
             .setBleStateInterface(bleStateInterface)
             .build()
     }
@@ -82,24 +82,27 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         sdkType: String,
         age: Int = 0,
         scaleUserBean: ScaleUserBean? = null,
-        scanResult: (ICScanDeviceInfo) -> Unit,
+        scanResultLF: ((PPDeviceModel) -> Unit)? = null,
+        scanResultWL: ((ICScanDeviceInfo) -> Unit)? = null,
     ) {
         when (sdkType) {
             DeviceConstants.D_SCALE_WL -> {
                 onCreateScale()
-                updateUserInfo(age, scaleUserBean)
-                onScanResult = scanResult
+                updateUserInfo(age, scaleUserBean, sdkType)
+                onScanResultWL = scanResultWL
                 ICDeviceManager.shared().scanDevice(this)
             }
             DeviceConstants.D_SCALE_LF -> {
-
+                onScanResultLF = scanResultLF
+                updateUserInfo(age, scaleUserBean, sdkType)
+                startScanDeviceList()
             }
         }
 
     }
 
     fun setOnMeasureResult(measureResult: ((ICWeightData) -> Unit)? = null) {
-        onMeasureResult = measureResult
+        onMeasureResultWL = measureResult
     }
 
     /**
@@ -110,44 +113,56 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         sdkType: String,
         mac: String,
         deviceName: String,
-        measureResult: ((ICWeightData) -> Unit)? = null,
+        measureResultWL: ((ICWeightData) -> Unit)? = null,
+        measureResultLF: ((PPDeviceModel) -> Unit)? = null,
         age: Int = 0,
         scaleUserBean: ScaleUserBean? = null,
     ) {
-        onMeasureResult = measureResult
+        onMeasureResultLF = measureResultLF
+        onMeasureResultWL = measureResultWL
         when (sdkType) {
             DeviceConstants.D_SCALE_WL -> {
                 onCreateScale()
                 val device = ICDevice()
                 device.macAddr = mac
-                updateUserInfo(age, scaleUserBean)
+                updateUserInfo(age, scaleUserBean, sdkType)
                 ICDeviceManager.shared().addDevice(device) { icDevice, status ->
                     writeToFile(TAG, "onConnectDevice:$deviceName $icDevice 状态: $status")
                 }
             }
             DeviceConstants.D_SCALE_LF -> {
-                val userModel = PPUserModel.Builder().setAge(age).build()
-                scaleUserBean?.run {
-                    userModel.userHeight = height.toDouble().toInt()
-                    userModel.sex =
-                        if (scaleUserBean.sex == 1) PPUserGender.PPUserGenderMale else PPUserGender.PPUserGenderFemale
-                }
                 ppScale.builder.setDeviceList(listOf(mac))
-                ppScale.builder.setUserModel(userModel)
+                updateUserInfo(age, scaleUserBean, sdkType)
             }
         }
         //启动扫描
         ppScale?.startSearchBluetoothScaleWithMacAddressList()
     }
 
+    /**
+     * 设备回调
+     */
     private fun getProtocolFilter(): ProtocalFilterImpl {
-        val protocolFilter = ProtocalFilterImpl()
-        if (searchType == 0) {
-            protocolFilter.bindDeviceInterface = PPBindDeviceInterface { deviceModel ->
-                Log.d(TAG, "PPBindDeviceInterface: $deviceModel")
+        return ProtocalFilterImpl().apply {
+            searchDeviceInfoInterface = PPSearchDeviceInfoInterface { ppDeviceModel ->
+                onScanResultLF?.invoke(ppDeviceModel)
             }
-        } else {
-            protocolFilter.setPPProcessDateInterface(object : PPProcessDateInterface() {
+            deviceInfoInterface = object : PPDeviceInfoInterface() {
+                override fun serialNumber(deviceModel: PPDeviceModel) {
+                    if (deviceModel.devicePowerType == PPScaleDefine.PPDevicePowerType.PPDevicePowerTypeSolar && deviceModel.deviceFuncType and PPScaleDefine.PPDeviceFuncType.PPDeviceFuncTypeHeartRate.getType() == PPScaleDefine.PPDeviceFuncType.PPDeviceFuncTypeHeartRate.getType() && deviceModel.serialNumber == "20220212") {
+                        disConnect()
+                    } else {
+                        Log.d(TAG, "PPDeviceInfoInterface :  $deviceModel")
+                    }
+                }
+
+                override fun onIlluminationChange(illumination: Int) {}
+                override fun readDeviceInfoComplete(deviceModel: PPDeviceModel) {
+                    //如果需要modelNumber 设备型号信息，则要主动发起连接并且见监听readDeviceInfoComplete时回调
+                    Log.d(TAG, "DeviceInfo :  $deviceModel")
+                }
+            }
+            setPPProcessDateInterface(object : PPProcessDateInterface() {
                 // 过程数据
                 override fun monitorProcessData(
                     bodyBaseModel: PPBodyBaseModel,
@@ -156,10 +171,11 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     val weightStr = PPUtil.getWeight(bodyBaseModel.unit,
                         bodyBaseModel.getPpWeightKg().toDouble(),
                         deviceModel.deviceAccuracyType.getType())
+                    onMeasureResultLF?.invoke(deviceModel)
                     Log.d("MainActivity2", "monitorLockData2 $bodyBaseModel $weightStr")
                 }
             })
-            protocolFilter.setPPLockDataInterface(object : PPLockDataInterface() {
+            setPPLockDataInterface(object : PPLockDataInterface() {
                 //锁定数据
                 override fun monitorLockData(
                     bodyFatModel: PPBodyBaseModel,
@@ -173,24 +189,19 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                 }
             })
         }
-        protocolFilter.deviceInfoInterface = object : PPDeviceInfoInterface() {
-            override fun serialNumber(deviceModel: PPDeviceModel) {
-                if (deviceModel.devicePowerType == PPScaleDefine.PPDevicePowerType.PPDevicePowerTypeSolar && deviceModel.deviceFuncType and PPScaleDefine.PPDeviceFuncType.PPDeviceFuncTypeHeartRate.getType() == PPScaleDefine.PPDeviceFuncType.PPDeviceFuncTypeHeartRate.getType() && deviceModel.serialNumber == "20220212") {
-                    disConnect()
-                } else {
-                    Log.d(TAG, "PPDeviceInfoInterface :  $deviceModel")
-                }
-            }
 
-            override fun onIlluminationChange(illumination: Int) {}
-            override fun readDeviceInfoComplete(deviceModel: PPDeviceModel) {
-                //如果需要modelNumber 设备型号信息，则要主动发起连接并且见监听readDeviceInfoComplete时回调
-                Log.d(TAG, "DeviceInfo :  $deviceModel")
-            }
-        }
-        return protocolFilter
     }
 
+    /**
+     * 乐福搜索设备
+     */
+    private fun startScanDeviceList() {
+        ppScale.monitorSurroundDevice(10000) //You can dynamically set the scan time in ms
+    }
+
+    /**
+     * 乐福数据稳定
+     */
     private fun onDataLock(bodyBaseModel: PPBodyBaseModel?, deviceModel: PPDeviceModel) {
         if (bodyBaseModel != null) {
             if (!bodyBaseModel.isHeartRating) {
@@ -201,6 +212,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     deviceModel.deviceAccuracyType.getType())
                 Log.d(TAG, "onDataLock1$bodyBaseModel")
                 Log.d(TAG, "onDataLock2$weightStr")
+                onMeasureResultLF?.invoke(deviceModel)
             } else {
                 Logger.d("正在测量心率")
             }
@@ -260,7 +272,8 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
      *onScanDevice
      */
     fun onStopScanDevice() {
-        onScanResult = null
+        onScanResultLF = null
+        onScanResultWL = null
         ppScale?.stopSearch()
         ICDeviceManager.shared().stopScan()
     }
@@ -271,20 +284,35 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     private fun updateUserInfo(
         age: Int,
         scaleUserBean: ScaleUserBean? = null,
+        sdkType: String = DeviceConstants.D_SCALE_WL,
     ) {
         scaleUserBean?.run {
-            val userInfo = ICUserInfo()
-            if (age > 0 && height.isNotEmpty() && id.isNotEmpty()) {
-                userInfo.age = age
-                userInfo.height = height.toFloat().toInt()
-                userInfo.sex =
-                    if (sex == 1) ICConstant.ICSexType.ICSexTypeMale else ICConstant.ICSexType.ICSexTypeFemal
-                userInfo.kitchenUnit = ICConstant.ICKitchenScaleUnit.ICKitchenScaleUnitG
-                userInfo.rulerUnit = ICConstant.ICRulerUnit.ICRulerUnitInch
-                userInfo.peopleType = ICConstant.ICPeopleType.ICPeopleTypeNormal//用户类型
-                // userInfo.userIndex = userIndex
-                ICDeviceManager.shared().updateUserInfo(userInfo)
+            when (sdkType) {
+                DeviceConstants.D_SCALE_WL -> {
+                    val userInfo = ICUserInfo()
+                    if (age > 0 && height.isNotEmpty() && id.isNotEmpty()) {
+                        userInfo.age = age
+                        userInfo.height = height.toFloat().toInt()
+                        userInfo.sex =
+                            if (sex == 1) ICConstant.ICSexType.ICSexTypeMale else ICConstant.ICSexType.ICSexTypeFemal
+                        userInfo.kitchenUnit = ICConstant.ICKitchenScaleUnit.ICKitchenScaleUnitG
+                        userInfo.rulerUnit = ICConstant.ICRulerUnit.ICRulerUnitInch
+                        userInfo.peopleType = ICConstant.ICPeopleType.ICPeopleTypeNormal//用户类型
+                        // userInfo.userIndex = userIndex
+                        ICDeviceManager.shared().updateUserInfo(userInfo)
+                    } else {
+                    }
+                }
+                DeviceConstants.D_SCALE_LF -> {
+                    val userModel = PPUserModel.Builder().setAge(age).build()
+                    userModel.userHeight = height.toDouble().toInt()
+                    userModel.sex =
+                        if (scaleUserBean.sex == 1) PPUserGender.PPUserGenderMale else PPUserGender.PPUserGenderFemale
+                    ppScale.builder.setUserModel(userModel)
+                }
+                else -> {}
             }
+
         }
         writeToFile(TAG, "updateUserInfo 有用户数据 $age $scaleUserBean")
     }
@@ -317,14 +345,14 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
      * 数据搜索回调
      */
     override fun onScanResult(scanDeviceInfo: ICScanDeviceInfo) {
-        onScanResult?.invoke(scanDeviceInfo)
+        onScanResultWL?.invoke(scanDeviceInfo)
         writeToFile(TAG, "onScanResult  ${scanDeviceInfo.vbToJson()}}")
     }
 
     //体重秤/体脂秤回调
     override fun onReceiveWeightData(device: ICDevice, data: ICWeightData) {
         writeToFile(TAG, "测量数据：onReceiveWeightData  ${device.vbToJson()} ${data.vbToJson()}")
-        onMeasureResult?.invoke(data)
+        onMeasureResultWL?.invoke(data)
     }
 
     override fun onInitFinish(bSuccess: Boolean) {
