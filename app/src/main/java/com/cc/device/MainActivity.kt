@@ -19,7 +19,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         val textView: TextView = findViewById(R.id.tv)
+        val tvDisconnect: TextView = findViewById(R.id.tvDisconnect)
         textView.setOnClickListener(this)
+        tvDisconnect.setOnClickListener(this)
         BluetoothManager.initDeviceManager(this.application, true)
     }
 
@@ -28,19 +30,22 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(v: View) {
         when (v.id) {
             R.id.tv -> {
-                scaleFunction.onStartScanDevice(DeviceConstants.D_SCALE_LF, 30, scanResultLF = {
+                scaleFunction.startScanDevice(DeviceConstants.D_SCALE_LF, 30, scanResultLF = {
                     if (it.deviceMac.isNotEmpty()) {
-                        scaleFunction.onStopScanDevice()
+                        scaleFunction.stopScanDevice()
                         Log.d(TAG, "scanResultLF: ${it.deviceName} ${it.deviceMac}")
-                        scaleFunction.onConnectDevice(DeviceConstants.D_SCALE_LF,
+                        scaleFunction.connectDevice(DeviceConstants.D_SCALE_LF,
                             it.deviceMac,
                             it.deviceName,
                             age = 20,
-                            measureResultLF = {measureData->
+                            measureResultLF = { measureData ->
                                 Log.d(TAG, "measureResultLF: $measureData")
                             })
                     }
                 })
+            }
+            R.id.tvDisconnect -> {
+                scaleFunction.removeICDevice("")
             }
         }
     }

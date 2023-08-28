@@ -56,11 +56,9 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     /**
-     * 初始化SDK
-     * 但是智慧初始化一次
-     * 每次使用前会判断是否有权限
+     * 只会初始化一次SDK 每次使用前会判断是否有权限
      */
-    private fun onCreateScale() {
+    private fun createScale() {
         if (initScaleSDK)
             return
         val config = ICDeviceManagerConfig()
@@ -71,14 +69,10 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
 
     /**
      * 开始扫描设备
-     * ICDeviceSubTypeDefault	四电极
-     * ICDeviceSubTypeEightElectrode	单频8电极
-     * ICDeviceSubTypeHeight	身高尺
-     * ICDeviceSubTypeEightElectrode2 双频8电极
-     * ICDeviceSubTypeScaleDual	BLE+WIFI设备
-     * ICDeviceSubTypeLightEffect	带灯效的跳绳
+     * ICDeviceSubTypeDefault 四电极 ICDeviceSubTypeEightElectrode	单频8电极 ICDeviceSubTypeHeight	身高尺
+     * ICDeviceSubTypeEightElectrode2 双频8电极 ICDeviceSubTypeScaleDual	BLE+WIFI设备 ICDeviceSubTypeLightEffect	带灯效的跳绳
      */
-    fun onStartScanDevice(
+    fun startScanDevice(
         sdkType: String,
         age: Int = 0,
         scaleUserBean: ScaleUserBean? = null,
@@ -87,7 +81,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     ) {
         when (sdkType) {
             DeviceConstants.D_SCALE_WL -> {
-                onCreateScale()
+                createScale()
                 updateUserInfo(age, scaleUserBean, sdkType)
                 onScanResultWL = scanResultWL
                 ICDeviceManager.shared().scanDevice(this)
@@ -101,15 +95,22 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
 
     }
 
-    fun setOnMeasureResult(measureResult: ((ICWeightData) -> Unit)? = null) {
+    /**
+     *测量回调
+     */
+    fun setMeasureResult(
+        measureResult: ((ICWeightData) -> Unit)? = null,
+        measureResultLF: ((PPDeviceModel) -> Unit)? = null,
+    ) {
         onMeasureResultWL = measureResult
+        onMeasureResultLF = measureResultLF
     }
 
     /**
      * 接口可以时SDK去连接设备并收取数据(请确保设备处于亮屏状态，否则SDK将会不会收到数据,
      * 中途蓝牙关闭或设备息屏，当蓝牙重新开启或设备再次亮屏，SDK会自动去连接，无需再次添加设备或扫描设备).
      */
-    fun onConnectDevice(
+    fun connectDevice(
         sdkType: String,
         mac: String,
         deviceName: String,
@@ -122,7 +123,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         onMeasureResultWL = measureResultWL
         when (sdkType) {
             DeviceConstants.D_SCALE_WL -> {
-                onCreateScale()
+                createScale()
                 val device = ICDevice()
                 device.macAddr = mac
                 updateUserInfo(age, scaleUserBean, sdkType)
@@ -140,7 +141,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     /**
-     * 设备回调
+     * 设备回调 LF
      */
     private fun getProtocolFilter(): ProtocalFilterImpl {
         return ProtocalFilterImpl().apply {
@@ -193,14 +194,14 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     /**
-     * 乐福搜索设备
+     * 搜索设备LF
      */
     private fun startScanDeviceList() {
         ppScale.monitorSurroundDevice(10000) //You can dynamically set the scan time in ms
     }
 
     /**
-     * 乐福数据稳定
+     * 乐福数据稳定 LF
      */
     private fun onDataLock(bodyBaseModel: PPBodyBaseModel?, deviceModel: PPDeviceModel) {
         if (bodyBaseModel != null) {
@@ -220,34 +221,15 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     /**
-     * 重新测量
-     */
-    private fun recalculateData(
-        bodyModel: PPBodyBaseModel,
-        ppDeviceModel: PPDeviceModel,
-        ppUserModel: PPUserModel,
-    ) {
-        PPBodyDetailModel.context = BluetoothManager.mApplication
-        val deviceModel = PPDeviceModel(ppDeviceModel.deviceMac, ppDeviceModel.deviceName)
-        deviceModel.deviceCalcuteType =
-            PPScaleDefine.PPDeviceCalcuteType.PPDeviceCalcuteTypeAlternate
-        val bodyBaseModel = PPBodyBaseModel()
-        bodyBaseModel.impedance = bodyModel.impedance
-        bodyBaseModel.weight = getWeight(bodyModel.getPpWeightKg().toDouble())
-        bodyBaseModel.deviceModel = deviceModel
-        bodyBaseModel.userModel = ppUserModel
-
-        val fatModel = PPBodyFatModel(bodyBaseModel)
-        Log.d(TAG, "recalculateData $fatModel")
-    }
-
-    /**
-     * 处理精度问题
+     * 处理精度问题 LF
      */
     private fun getWeight(double: Double): Int {
         return ((double + 0.005) * 100).toInt()
     }
 
+    /**
+     * LF
+     */
     private fun disConnect() {
         ppScale?.stopSearch()
         ppScale?.disConnect()
@@ -265,13 +247,13 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         ICDeviceManager.shared().removeDevice(device) { icDevice, status ->
             writeToFile(TAG, "removeICDevice: $icDevice 状态: $status")
         }
+        disConnect()
     }
 
     /**
-     * 停止搜索
-     *onScanDevice
+     * 停止搜索f
      */
-    fun onStopScanDevice() {
+    fun stopScanDevice() {
         onScanResultLF = null
         onScanResultWL = null
         ppScale?.stopSearch()
@@ -318,7 +300,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     /**
-     * 根据用户数据重新计算
+     * 根据用户数据重新计算 WL
      */
     fun resetScaleData(
         icWeightData: ICWeightData,
@@ -342,33 +324,56 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     /**
-     * 数据搜索回调
+     * 重新计算 LF
+     */
+    private fun recalculateData(
+        bodyModel: PPBodyBaseModel,
+        ppDeviceModel: PPDeviceModel,
+        ppUserModel: PPUserModel,
+    ) {
+        PPBodyDetailModel.context = BluetoothManager.mApplication
+        val deviceModel = PPDeviceModel(ppDeviceModel.deviceMac, ppDeviceModel.deviceName)
+        deviceModel.deviceCalcuteType =
+            PPScaleDefine.PPDeviceCalcuteType.PPDeviceCalcuteTypeAlternate
+        val bodyBaseModel = PPBodyBaseModel()
+        bodyBaseModel.impedance = bodyModel.impedance
+        bodyBaseModel.weight = getWeight(bodyModel.getPpWeightKg().toDouble())
+        bodyBaseModel.deviceModel = deviceModel
+        bodyBaseModel.userModel = ppUserModel
+
+        val fatModel = PPBodyFatModel(bodyBaseModel)
+        Log.d(TAG, "recalculateData $fatModel")
+    }
+
+    /**
+     * 数据搜索回调 WL
      */
     override fun onScanResult(scanDeviceInfo: ICScanDeviceInfo) {
         onScanResultWL?.invoke(scanDeviceInfo)
         writeToFile(TAG, "onScanResult  ${scanDeviceInfo.vbToJson()}}")
     }
 
-    //体重秤/体脂秤回调
+    //体重秤/体脂秤回调 WL
     override fun onReceiveWeightData(device: ICDevice, data: ICWeightData) {
         writeToFile(TAG, "测量数据：onReceiveWeightData  ${device.vbToJson()} ${data.vbToJson()}")
         onMeasureResultWL?.invoke(data)
     }
 
+    //LW
     override fun onInitFinish(bSuccess: Boolean) {
         initScaleSDK = bSuccess
         writeToFile(TAG, "onInitFinish: $bSuccess")
     }
 
     /**
-     * 蓝牙状态 state
+     * 蓝牙状态 state WL
      */
     override fun onBleState(state: ICConstant.ICBleState) {
         writeToFile(TAG, "onBleState: $state")
     }
 
     /**
-     * 设备连接状态 state
+     * WL 设备连接状态 state
      */
     override fun onDeviceConnectionChanged(
         device: ICDevice,
@@ -384,7 +389,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     /**
-     * 体重秤数据回调
+     * 体重秤数据回调 WL
      */
     override fun onReceiveKitchenScaleData(device: ICDevice, data: ICKitchenScaleData) {
         writeToFile(TAG, "测量数据:onReceiveKitchenScaleData: ${data.value_fl_oz_milk}")
@@ -428,14 +433,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     ) {
     }
 
-    //ICMeasureStepMeasureWeightData	测量体重 (ICWeightData)
-//ICMeasureStepMeasureCenterData	测量平衡 (ICWeightCenterData)
-//ICMeasureStepAdcStart	开始测量阻抗
-//ICMeasureStepAdcResult	测量阻抗结束 (ICWeightData)
-//ICMeasureStepHrStart	开始测量心率
-//ICMeasureStepHrResult	测量心率结束 (ICWeightData)
-//ICMeasureStepMeasureOver	测量结束
-// eight eletrode scale callback
+    //WL
     override fun onReceiveMeasureStepData(
         icDevice: ICDevice,
         step: ICConstant.ICMeasureStep,
@@ -471,55 +469,67 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     /**
-     * 状态回调接口
+     * LF 状态回调接口
      */
     private var bleStateInterface: PPBleStateInterface = object : PPBleStateInterface {
         override fun monitorBluetoothWorkState(
             ppBleWorkState: PPBleWorkState?,
             deviceModel: PPDeviceModel?,
         ) {
-            if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnected) {
-                Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateConnected")
-            } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnecting) {
-                Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateConnecting")
-            } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateDisconnected) {
-                Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateDisconnected")
-            } else if (ppBleWorkState == PPBleWorkState.PPBleStateSearchCanceled) {
-                Log.d(TAG, "monitorBluetoothWorkState: PPBleStateSearchCanceled")
-            } else if (ppBleWorkState == PPBleWorkState.PPBleWorkSearchTimeOut) {
-                Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkSearchTimeOut")
-            } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateSearching) {
-                Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateSearching")
-            } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateWritable) {
-                Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateWritable")
-                //可写状态，可以发送指令，例如切换单位，获取历史数据等
-                sendUnitDataScale(deviceModel) { sendState ->
-                    when (sendState) {
-                        PPScaleSendState.PP_SEND_FAIL -> {
-                            //Failed to send
-                        }
-                        PPScaleSendState.PP_SEND_SUCCESS -> {
-                            //sentSuccessfully
-                        }
-                        PPScaleSendState.PP_DEVICE_ERROR -> {
-                            //Device error, indicating that the command is not supported
-                        }
-                        PPScaleSendState.PP_DEVICE_NO_CONNECT -> {
-                            //deviceNotConnected
+            deviceModel?.run {
+                val address = deviceModel.deviceMac
+                val status = ppBleWorkState == PPBleWorkState.PPBleWorkStateConnected
+                val bean =
+                    DevicePropertyBean(address, DeviceConstants.D_FAT_SCALE, isConnect = status)
+                if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnected) {
+                    BluetoothManager.savaConnectMap(bean)
+                    LiveDataBus.postValue(CONNECT_BEAN_KEY,
+                        DeviceConnectBean(address, DeviceConstants.D_FAT_SCALE, isConnect = true))
+                } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnecting) {
+                    Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateConnecting")
+                } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateDisconnected) {
+                    BluetoothManager.savaConnectMap(bean)
+                    LiveDataBus.postValue(CONNECT_BEAN_KEY,
+                        DeviceConnectBean(address, DeviceConstants.D_FAT_SCALE, isConnect = false))
+                } else if (ppBleWorkState == PPBleWorkState.PPBleStateSearchCanceled) {
+                    Log.d(TAG, "monitorBluetoothWorkState: PPBleStateSearchCanceled")
+                } else if (ppBleWorkState == PPBleWorkState.PPBleWorkSearchTimeOut) {
+                    Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkSearchTimeOut")
+                } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateSearching) {
+                    Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateSearching")
+                } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateWritable) {
+                    Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateWritable")
+                    //可写状态，可以发送指令，例如切换单位，获取历史数据等
+                    sendUnitDataScale(deviceModel) { sendState ->
+                        when (sendState) {
+                            PPScaleSendState.PP_SEND_FAIL -> {
+                                //Failed to send
+                            }
+                            PPScaleSendState.PP_SEND_SUCCESS -> {
+                                //sentSuccessfully
+                            }
+                            PPScaleSendState.PP_DEVICE_ERROR -> {
+                                //Device error, indicating that the command is not supported
+                            }
+                            PPScaleSendState.PP_DEVICE_NO_CONNECT -> {
+                                //deviceNotConnected
+                            }
                         }
                     }
-                }
-            } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnectable) {
-                Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateConnectable")
-                //连接，在ppBleWorkState == PPBleWorkState.PPBleWorkStateWritable时开始发送数据
-                if (searchType != 0 && deviceModel?.isDeviceConnectAbled == true) {
-                    ppScale?.stopSearch()
-                    ppScale?.connectDevice(deviceModel)
+                } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnectable) {
+                    Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateConnectable")
+                    //连接，在ppBleWorkState == PPBleWorkState.PPBleWorkStateWritable时开始发送数据
+                    if (searchType != 0 && deviceModel.isDeviceConnectAbled) {
+                        ppScale?.stopSearch()
+                        ppScale?.connectDevice(deviceModel)
+                    } else {
+                        //绑定设备时不发起连接，非可连接设备，不发起连接
+                    }
                 } else {
-                    //绑定设备时不发起连接，非可连接设备，不发起连接
+                    Log.d(TAG, "monitorBluetoothWorkState: ppBleWorkState")
                 }
-            } else {
-                Log.d(TAG, "monitorBluetoothWorkState: ppBleWorkState")
+                writeToFile(TAG,
+                    "onDeviceConnectionChanged: ${deviceModel.deviceMac} ${deviceModel.deviceName} $ppBleWorkState")
             }
         }
 
@@ -529,7 +539,6 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     Log.d(TAG, "monitorBluetoothSwitchState: 关闭")
                 }
                 PPBleSwitchState.PPBleSwitchStateOn -> {
-//                    delayScan()
                     Log.d(TAG, "monitorBluetoothSwitchState: 开启")
                 }
                 else -> {
@@ -540,7 +549,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     /**
-     * 切换单位指令
+     * 切换单位指令 LF
      */
     private fun sendUnitDataScale(
         deviceModel: PPDeviceModel?,
@@ -556,7 +565,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     }
 
     /**
-     * 历史数据仅部分设备支持
+     * 历史数据仅部分设备支持 WL
      */
     override fun onReceiveWeightHistoryData(
         icDevice: ICDevice,
