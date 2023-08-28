@@ -185,6 +185,12 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     onDataLock(bodyFatModel, deviceModel)
                 }
 
+                override fun monitorLockDataByCalculateInScale(fatModel: PPBodyFatModel) {
+                    super.monitorLockDataByCalculateInScale(fatModel)
+                    fatModel.ppBodyBaseModel
+                    Log.d(TAG, "monitorLockDataByCalculateInScale: $fatModel")
+                }
+
                 override fun monitorOverWeight() {
                     Log.d(TAG, "monitorOverWeight: over weight ")
                 }
@@ -213,7 +219,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     deviceModel.deviceAccuracyType.getType())
                 Log.d(TAG, "onDataLock1$bodyBaseModel")
                 Log.d(TAG, "onDataLock2$weightStr")
-                onMeasureResultLF?.invoke(bodyBaseModel!!)
+                onMeasureResultLF?.invoke(bodyBaseModel)
             } else {
                 Logger.d("正在测量心率")
             }
@@ -328,14 +334,13 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
      */
     fun resetScaleData(
         bodyModel: PPBodyBaseModel,
-        mac: String,
-        name: String,
         age: Int,
         scaleUserBean: ScaleUserBean,
     ): PPBodyFatModel {
         PPBodyDetailModel.context = BluetoothManager.mApplication
-        val deviceModel = PPDeviceModel(mac, name)
-        deviceModel.deviceCalcuteType = PPScaleDefine.PPDeviceCalcuteType.PPDeviceCalcuteTypeAlternate
+        val deviceModel = PPDeviceModel(bodyModel.deviceModel?.deviceMac, bodyModel.deviceModel?.deviceName)
+        deviceModel.deviceCalcuteType =
+            PPScaleDefine.PPDeviceCalcuteType.PPDeviceCalcuteTypeAlternate
         val bodyBaseModel = PPBodyBaseModel()
         bodyBaseModel.impedance = bodyModel.impedance
         bodyBaseModel.weight = getWeight(bodyModel.getPpWeightKg().toDouble())
@@ -386,7 +391,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         val address = device.getMacAddr()
         val status = state == ICConstant.ICDeviceConnectState.ICDeviceConnectStateConnected
         val bean = DevicePropertyBean(address, DeviceConstants.D_FAT_SCALE, isConnect = status)
-        BluetoothManager.savaConnectMap(bean)
+        BluetoothManager.saveConnectMap(bean)
         LiveDataBus.postValue(CONNECT_BEAN_KEY,
             DeviceConnectBean(address, DeviceConstants.D_FAT_SCALE, isConnect = status))
         writeToFile(TAG, "onDeviceConnectionChanged: ${device.getMacAddr()} $state")
@@ -484,15 +489,15 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                 val address = deviceModel.deviceMac
                 val status = ppBleWorkState == PPBleWorkState.PPBleWorkStateConnected
                 val bean =
-                    DevicePropertyBean(address, DeviceConstants.D_FAT_SCALE, isConnect = status)
+                    DevicePropertyBean(address, DeviceConstants.D_FAT_SCALE,deviceModel.deviceName, isConnect = status)
                 if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnected) {
-                    BluetoothManager.savaConnectMap(bean)
+                    BluetoothManager.saveConnectMap(bean)
                     LiveDataBus.postValue(CONNECT_BEAN_KEY,
                         DeviceConnectBean(address, DeviceConstants.D_FAT_SCALE, isConnect = true))
                 } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnecting) {
                     Log.d(TAG, "monitorBluetoothWorkState: PPBleWorkStateConnecting")
                 } else if (ppBleWorkState == PPBleWorkState.PPBleWorkStateDisconnected) {
-                    BluetoothManager.savaConnectMap(bean)
+                    BluetoothManager.saveConnectMap(bean)
                     LiveDataBus.postValue(CONNECT_BEAN_KEY,
                         DeviceConnectBean(address, DeviceConstants.D_FAT_SCALE, isConnect = false))
                 } else if (ppBleWorkState == PPBleWorkState.PPBleStateSearchCanceled) {
