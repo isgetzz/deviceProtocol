@@ -47,6 +47,7 @@ dependencies {
     compileOnly 'androidx.lifecycle:lifecycle-common-java8:2.2.0'
 //    api files('libs/ppscale.aar')
 //    api files('libs/ICDeviceManager.aar')
+
     embed(name: 'ICDeviceManager', ext: 'aar')
     embed(name: 'ppscale', ext: 'aar')
 
