@@ -30,11 +30,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(v: View) {
         when (v.id) {
             R.id.tv -> {
-                scaleFunction.startScanDevice(DeviceConstants.D_SERVICE_SCALE_LF, 30, scanResultLF = {
+                scaleFunction.startScanDevice(DeviceConstants.D_SCALE_LF, 30, scanResultLF = {
                     if (it.deviceMac.isNotEmpty()) {
                         scaleFunction.stopScanDevice()
                         Log.d(TAG, "scanResultLF: ${it.deviceName} ${it.deviceMac}")
-                        scaleFunction.connectDevice(DeviceConstants.D_SERVICE_SCALE_LF,
+                        scaleFunction.connectDevice(DeviceConstants.D_SCALE_LF,
                             it.deviceMac,
                             it.deviceName,
                             age = 20,

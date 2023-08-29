@@ -40,7 +40,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
 
     private var initScaleSDK = false    // 初始化SDK 体脂秤
     private var onMeasureResultWL: ((ICWeightData) -> Unit)? = null//测量结果回调
-    private var onMeasureResultLF: ((PPBodyBaseModel) -> Unit)? = null//测量结果回调
+    private var onMeasureResultLF: ((PPDeviceModel) -> Unit)? = null//测量结果回调
     private var onScanResultLF: ((PPDeviceModel) -> Unit)? = null//搜索结果回调 乐福
     private var onScanResultWL: ((ICScanDeviceInfo) -> Unit)? = null//搜索结果回调 沃莱
     private val unitType: PPUnitType = PPUnitType.Unit_KG
@@ -73,20 +73,20 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
      * ICDeviceSubTypeEightElectrode2 双频8电极 ICDeviceSubTypeScaleDual	BLE+WIFI设备 ICDeviceSubTypeLightEffect	带灯效的跳绳
      */
     fun startScanDevice(
-        sdkType: Int,
+        sdkType: String,
         age: Int = 0,
         scaleUserBean: ScaleUserBean? = null,
         scanResultLF: ((PPDeviceModel) -> Unit)? = null,
         scanResultWL: ((ICScanDeviceInfo) -> Unit)? = null,
     ) {
         when (sdkType) {
-            DeviceConstants.D_SERVICE_SCALE_WL -> {
+            DeviceConstants.D_SCALE_WL -> {
                 createScale()
                 updateUserInfo(age, scaleUserBean, sdkType)
                 onScanResultWL = scanResultWL
                 ICDeviceManager.shared().scanDevice(this)
             }
-            DeviceConstants.D_SERVICE_SCALE_LF -> {
+            DeviceConstants.D_SCALE_LF -> {
                 onScanResultLF = scanResultLF
                 updateUserInfo(age, scaleUserBean, sdkType)
                 startScanDeviceList()
@@ -100,7 +100,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
      */
     fun setMeasureResult(
         measureResult: ((ICWeightData) -> Unit)? = null,
-        measureResultLF: ((PPBodyBaseModel) -> Unit)? = null,
+        measureResultLF: ((PPDeviceModel) -> Unit)? = null,
     ) {
         onMeasureResultWL = measureResult
         onMeasureResultLF = measureResultLF
@@ -111,18 +111,18 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
      * 中途蓝牙关闭或设备息屏，当蓝牙重新开启或设备再次亮屏，SDK会自动去连接，无需再次添加设备或扫描设备).
      */
     fun connectDevice(
-        sdkType: Int,
+        sdkType: String,
         mac: String,
         deviceName: String,
         measureResultWL: ((ICWeightData) -> Unit)? = null,
-        measureResultLF: ((PPBodyBaseModel) -> Unit)? = null,
+        measureResultLF: ((PPDeviceModel) -> Unit)? = null,
         age: Int = 0,
         scaleUserBean: ScaleUserBean? = null,
     ) {
         onMeasureResultLF = measureResultLF
         onMeasureResultWL = measureResultWL
         when (sdkType) {
-            DeviceConstants.D_SERVICE_SCALE_WL -> {
+            DeviceConstants.D_SCALE_WL -> {
                 createScale()
                 val device = ICDevice()
                 device.macAddr = mac
@@ -131,7 +131,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     writeToFile(TAG, "onConnectDevice:$deviceName $icDevice 状态: $status")
                 }
             }
-            DeviceConstants.D_SERVICE_SCALE_LF -> {
+            DeviceConstants.D_SCALE_LF -> {
                 ppScale.builder.setDeviceList(listOf(mac))
                 updateUserInfo(age, scaleUserBean, sdkType)
             }
@@ -172,7 +172,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     val weightStr = PPUtil.getWeight(bodyBaseModel.unit,
                         bodyBaseModel.getPpWeightKg().toDouble(),
                         deviceModel.deviceAccuracyType.getType())
-                    onMeasureResultLF?.invoke(bodyBaseModel)
+                    onMeasureResultLF?.invoke(deviceModel)
                     Log.d("MainActivity2", "monitorLockData2 $bodyBaseModel $weightStr")
                 }
             })
@@ -183,12 +183,6 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     deviceModel: PPDeviceModel,
                 ) {
                     onDataLock(bodyFatModel, deviceModel)
-                }
-
-                override fun monitorLockDataByCalculateInScale(fatModel: PPBodyFatModel) {
-                    super.monitorLockDataByCalculateInScale(fatModel)
-                    fatModel.ppBodyBaseModel
-                    Log.d(TAG, "monitorLockDataByCalculateInScale: $fatModel")
                 }
 
                 override fun monitorOverWeight() {
@@ -219,7 +213,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     deviceModel.deviceAccuracyType.getType())
                 Log.d(TAG, "onDataLock1$bodyBaseModel")
                 Log.d(TAG, "onDataLock2$weightStr")
-                onMeasureResultLF?.invoke(bodyBaseModel)
+                onMeasureResultLF?.invoke(deviceModel)
             } else {
                 Logger.d("正在测量心率")
             }
@@ -272,11 +266,11 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     private fun updateUserInfo(
         age: Int,
         scaleUserBean: ScaleUserBean? = null,
-        sdkType: Int = DeviceConstants.D_SERVICE_SCALE_WL,
+        sdkType: String = DeviceConstants.D_SCALE_WL,
     ) {
         scaleUserBean?.run {
             when (sdkType) {
-                DeviceConstants.D_SERVICE_SCALE_WL -> {
+                DeviceConstants.D_SCALE_WL -> {
                     val userInfo = ICUserInfo()
                     if (age > 0 && height.isNotEmpty() && id.isNotEmpty()) {
                         userInfo.age = age
@@ -291,7 +285,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     } else {
                     }
                 }
-                DeviceConstants.D_SERVICE_SCALE_LF -> {
+                DeviceConstants.D_SCALE_LF -> {
                     val userModel = PPUserModel.Builder().setAge(age).build()
                     userModel.userHeight = height.toDouble().toInt()
                     userModel.sex =
@@ -325,33 +319,30 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
             ICDeviceManager.shared().bodyFatAlgorithmsManager.reCalcBodyFatWithWeightData(
                 icWeightData,
                 userInfo)
-        writeToFile(TAG, "resetScaleData  $userInfo $scaleUserBean")
+        writeToFile(TAG, "resetScaleData  $userInfo ${scaleUserBean.vbToJson()}")
         return reCalcWeightData
     }
 
     /**
      * 重新计算 LF
      */
-    fun resetScaleData(
+    private fun recalculateData(
         bodyModel: PPBodyBaseModel,
-        age: Int,
-        scaleUserBean: ScaleUserBean,
-    ): PPBodyFatModel {
+        ppDeviceModel: PPDeviceModel,
+        ppUserModel: PPUserModel,
+    ) {
         PPBodyDetailModel.context = BluetoothManager.mApplication
-        val deviceModel = PPDeviceModel(bodyModel.deviceModel?.deviceMac, bodyModel.deviceModel?.deviceName)
+        val deviceModel = PPDeviceModel(ppDeviceModel.deviceMac, ppDeviceModel.deviceName)
         deviceModel.deviceCalcuteType =
             PPScaleDefine.PPDeviceCalcuteType.PPDeviceCalcuteTypeAlternate
         val bodyBaseModel = PPBodyBaseModel()
         bodyBaseModel.impedance = bodyModel.impedance
         bodyBaseModel.weight = getWeight(bodyModel.getPpWeightKg().toDouble())
         bodyBaseModel.deviceModel = deviceModel
-        val userModel = PPUserModel.Builder().setAge(age).build()
-        userModel.userHeight = scaleUserBean.height.toDouble().toInt()
-        userModel.sex =
-            if (scaleUserBean.sex == 1) PPUserGender.PPUserGenderMale else PPUserGender.PPUserGenderFemale
-        bodyBaseModel.userModel = userModel
-        writeToFile(TAG, "resetScaleData  $userModel $scaleUserBean")
-        return PPBodyFatModel(bodyBaseModel)
+        bodyBaseModel.userModel = ppUserModel
+
+        val fatModel = PPBodyFatModel(bodyBaseModel)
+        Log.d(TAG, "recalculateData $fatModel")
     }
 
     /**
@@ -489,7 +480,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                 val address = deviceModel.deviceMac
                 val status = ppBleWorkState == PPBleWorkState.PPBleWorkStateConnected
                 val bean =
-                    DevicePropertyBean(address, DeviceConstants.D_FAT_SCALE,deviceModel.deviceName, isConnect = status)
+                    DevicePropertyBean(address, DeviceConstants.D_FAT_SCALE, isConnect = status)
                 if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnected) {
                     BluetoothManager.saveConnectMap(bean)
                     LiveDataBus.postValue(CONNECT_BEAN_KEY,

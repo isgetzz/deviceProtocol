@@ -32,8 +32,8 @@ data class DeviceListBean(val records: List<Records> = listOf()) {
         var otaProtocol: Int = 0,//ota协议
         var showMedal: Boolean = false,//显示勋章
         var featureDescription: List<FeatureDescription>? = listOf(),
-        var description: String = "",
-        var maxResistance: Int = 0,
+        var description:String="",
+        var maxResistance:String="",
     ) : Parcelable {
         @Parcelize
         data class FeatureDescription(

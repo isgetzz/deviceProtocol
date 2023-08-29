@@ -19,6 +19,8 @@ object DeviceConstants {
     const val D_HEART = "100" //心率带
     const val D_FAT_SCALE = "41"//体脂秤
     const val D_PHYLLISRODS = "27" //菲利斯棒
+    const val D_SCALE_LF = "410"//乐福体脂秤
+    const val D_SCALE_WL = "420"//沃莱体脂秤
 
     //心率状态
     const val D_SPORT_PART_READY = 200
@@ -45,10 +47,7 @@ object DeviceConstants {
     const val D_SERVICE_TYPE_BQ = 4
     const val D_SERVICE_TYPE_OTHER = 5
     const val D_SERVICE_TYPE_FASCIA = 6
-    const val D_SERVICE_SCALE_WL = 101
     const val D_SERVICE_TYPE_HEART = 102
-    const val D_SERVICE_SCALE_LF = 104
-
 
     //公司协议
     const val D_SERVICE_MRK = "59554c55-8000-6666-8888-4d4552414348"
