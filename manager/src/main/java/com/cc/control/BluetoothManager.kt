@@ -414,6 +414,7 @@ object BluetoothManager {
             }
         }
         deviceConnectMap.clear()
+
     }
 
     /**
