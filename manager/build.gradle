@@ -47,4 +47,5 @@ dependencies {
     implementation 'no.nordicsemi.android:ble-common:2.2.0'
     compileOnly 'androidx.lifecycle:lifecycle-common-java8:2.2.0'
     embed(name: 'ICDeviceManager', ext: 'aar')
+    embed(name: 'ppscale', ext: 'aar')
 }
