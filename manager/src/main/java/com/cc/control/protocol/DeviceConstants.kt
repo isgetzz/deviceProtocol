@@ -46,6 +46,8 @@ object DeviceConstants {
     const val D_SERVICE_TYPE_OTHER = 5
     const val D_SERVICE_TYPE_FASCIA = 6
     const val D_SERVICE_TYPE_HEART = 102
+    const val D_SERVICE_SCALE_WL = 101
+    const val D_SERVICE_SCALE_LF = 104
 
     //公司协议
     const val D_SERVICE_MRK = "59554c55-8000-6666-8888-4d4552414348"

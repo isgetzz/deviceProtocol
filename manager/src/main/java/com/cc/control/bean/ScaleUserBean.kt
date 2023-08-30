@@ -17,6 +17,7 @@ data class ScaleUserBean(
     val id: String = "", // 1541319128676057090
     val createId: Long = 0, // 1377431331972788225
     val isDelete: Int = 0, // 0
+    var age: Int = 0,//年龄
     val isMain: Int = 0, // 1是否是主账号，1是0否
     val lastTime: String = "",
     val remark: String = "",

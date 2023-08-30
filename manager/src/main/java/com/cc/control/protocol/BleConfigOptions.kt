@@ -2,6 +2,7 @@ package com.cc.control.protocol
 
 import com.inuker.bluetooth.library.connect.options.BleConnectOptions
 import com.inuker.bluetooth.library.search.SearchRequest
+import com.peng.ppscale.business.ble.BleOptions
 
 /**
  * Author      : cc
@@ -38,6 +39,14 @@ object BleConfigOptions {
             .searchBluetoothLeDevice(3000) // 再扫BLE设备2s
             .build()
     }
-
+    /**
+     * lf 体脂秤配置
+     */
+    val lfOptions: BleOptions by lazy  {
+        BleOptions.Builder()
+            .setSearchTag(BleOptions.SEARCH_TAG_NORMAL) //broadcast
+            // .setSearchTag(BleOptions.SEARCH_TAG_DIRECT_CONNECT)//direct connection
+            .build()
+    }
 }
 
