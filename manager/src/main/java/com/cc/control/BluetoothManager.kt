@@ -327,6 +327,9 @@ object BluetoothManager {
             override fun onSearchCanceled() {
                 if (needSearch) listener.invoke("", "")
             }
+
+            override fun onSearchFail(p0: Int) {
+            }
         })
     }
 
@@ -420,7 +423,7 @@ object BluetoothManager {
     /**
      *存储bean
      */
-    fun savaConnectMap(bean: DevicePropertyBean) {
+    fun saveConnectMap(bean: DevicePropertyBean) {
         deviceConnectMap[bean.type] = bean
     }
 }
