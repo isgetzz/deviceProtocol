@@ -74,7 +74,7 @@ class DeviceBicycleFunction(device: String) : BaseDeviceFunction(device) {
             }
             DeviceConstants.D_SERVICE_TYPE_FTMS -> {
                 write(writeFTMSControl())
-                writeBicycleControl(resistance)
+                writeResistanceControl(resistance)
             }
             DeviceConstants.D_SERVICE_TYPE_MRK -> {
                 writeMrkControl(resistance)
