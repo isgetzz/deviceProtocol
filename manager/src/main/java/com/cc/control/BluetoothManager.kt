@@ -327,9 +327,6 @@ object BluetoothManager {
             override fun onSearchCanceled() {
                 if (needSearch) listener.invoke("", "")
             }
-
-            override fun onSearchFail(p0: Int) {
-            }
         })
     }
 

@@ -327,7 +327,7 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
                     val heartService = string2UUID(DeviceConstants.D_SERVICE_MRK)
                     val heartCharacter = string2UUID(DeviceConstants.D_CHARACTER_HEART_MRK)
                     val heart = data.containsCharacter(heartService, heartCharacter)
-                    BluetoothManager.savaConnectMap(DevicePropertyBean(records.mac,
+                    BluetoothManager.saveConnectMap(DevicePropertyBean(records.mac,
                         records.productId,
                         records.bluetoothName,
                         data,

@@ -84,9 +84,6 @@ class DFUOta : BaseDeviceOta() {
                         override fun onSearchCanceled() {
                             if (isToast) deviceOtaListener?.invoke(D_OTA_ERROR, 0)
                         }
-
-                        override fun onSearchFail(p0: Int) {
-                        }
                     })
                 }
             }
