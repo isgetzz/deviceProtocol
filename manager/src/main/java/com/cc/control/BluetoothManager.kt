@@ -28,6 +28,7 @@ import java.util.*
 object BluetoothManager {
     private var mClient: BluetoothClient? = null
     const val TAG = "BluetoothManager"
+
     /**
      * 蓝牙状态监听
      */
@@ -258,7 +259,7 @@ object BluetoothManager {
             deviceConnectMap[type] = this
             val bean = DeviceConnectBean(address, type, name, true, deviceRelId = deviceUserRelId)
             LiveDataBus.postValue(CONNECT_BEAN_KEY, bean)
-            writeToFile(TAG,"$type $mProtocol $mOtaType")
+            writeToFile(TAG, "$type $mProtocol $mOtaType")
         }
     }
 
@@ -326,6 +327,9 @@ object BluetoothManager {
 
             override fun onSearchCanceled() {
                 if (needSearch) listener.invoke("", "")
+            }
+
+            override fun onSearchFail(p0: Int) {
             }
         })
     }
