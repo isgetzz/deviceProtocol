@@ -63,7 +63,7 @@ class DeviceBicycleFunction(device: String) : BaseDeviceFunction(device) {
         }
     }
 
-    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean) {
+    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean,isSlope: Boolean) {
         deviceControl(when (propertyBean.protocol) {
             DeviceConstants.D_SERVICE_TYPE_BQ -> {
                 if (propertyBean.type == DeviceConstants.D_ROW) {
@@ -74,7 +74,11 @@ class DeviceBicycleFunction(device: String) : BaseDeviceFunction(device) {
             }
             DeviceConstants.D_SERVICE_TYPE_FTMS -> {
                 write(writeFTMSControl())
-                writeResistanceControl(resistance)
+                if (isSlope){
+                    writeSlopeControl(slope * 10)
+                }else{
+                    writeResistanceControl(resistance)
+                }
             }
             DeviceConstants.D_SERVICE_TYPE_MRK -> {
                 writeMrkControl(resistance)

@@ -48,7 +48,13 @@ open class DeviceTreadmillFunction(device: String) : BaseDeviceFunction(device) 
     /**
      * 智健协议单位0.1所以跑步机速度需要*10
      */
-    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean) {
+    override fun onControl(
+        speed: Int,
+        resistance: Int,
+        slope: Int,
+        isDelayed: Boolean,
+        isSlope: Boolean,
+    ) {
         onWriteStart {
             deviceControl(writeTreadmillControl(speed, slope), isDelayed)
         }
