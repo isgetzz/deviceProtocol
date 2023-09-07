@@ -11,7 +11,6 @@ import cn.icomon.icdevicemanager.model.device.ICScanDeviceInfo
 import cn.icomon.icdevicemanager.model.device.ICUserInfo
 import cn.icomon.icdevicemanager.model.other.ICConstant
 import cn.icomon.icdevicemanager.model.other.ICDeviceManagerConfig
-import com.cc.control.BluetoothManager.getBleOptions
 import com.cc.control.LiveDataBus.CONNECT_BEAN_KEY
 import com.cc.control.bean.DeviceConnectBean
 import com.cc.control.bean.DevicePropertyBean

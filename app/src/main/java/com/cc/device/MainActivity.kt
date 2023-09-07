@@ -24,28 +24,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         tvDisconnect.setOnClickListener(this)
         BluetoothManager.initDeviceManager(this.application, true)
     }
-
-
-    private var scaleFunction = DeviceScaleFunction()
     override fun onClick(v: View) {
         when (v.id) {
             R.id.tv -> {
-                scaleFunction.startScanDevice(DeviceConstants.D_SCALE_LF, 30, scanResultLF = {
-                    if (it.deviceMac.isNotEmpty()) {
-                        scaleFunction.stopScanDevice()
-                        Log.d(TAG, "scanResultLF: ${it.deviceName} ${it.deviceMac}")
-                        scaleFunction.connectDevice(DeviceConstants.D_SCALE_LF,
-                            it.deviceMac,
-                            it.deviceName,
-                            age = 20,
-                            measureResultLF = { measureData ->
-                                Log.d(TAG, "measureResultLF: $measureData")
-                            })
-                    }
-                })
             }
             R.id.tvDisconnect -> {
-                scaleFunction.removeICDevice("")
             }
         }
     }

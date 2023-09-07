@@ -19,7 +19,6 @@ import com.inuker.bluetooth.library.Constants
 import com.inuker.bluetooth.library.connect.listener.BluetoothStateListener
 import com.inuker.bluetooth.library.search.SearchResult
 import com.inuker.bluetooth.library.search.response.SearchResponse
-import com.peng.ppscale.business.ble.BleOptions
 import java.util.*
 
 /**
@@ -329,9 +328,6 @@ object BluetoothManager {
             override fun onSearchCanceled() {
                 if (needSearch) listener.invoke("", "")
             }
-
-            override fun onSearchFail(p0: Int) {
-            }
         })
     }
 
@@ -426,16 +422,6 @@ object BluetoothManager {
      */
     fun saveConnectMap(bean: DevicePropertyBean) {
         deviceConnectMap[bean.type] = bean
-    }
-
-    /**
-     * 乐福体脂秤配置
-     */
-    fun getBleOptions(): BleOptions {
-        return BleOptions.Builder()
-            .setSearchTag(BleOptions.SEARCH_TAG_NORMAL)
-            //.setSearchTag(BleOptions.SEARCH_TAG_DIRECT_CONNECT)//direct connection
-            .build()
     }
 
 }
