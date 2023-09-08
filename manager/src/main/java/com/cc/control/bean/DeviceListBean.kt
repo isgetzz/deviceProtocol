@@ -35,6 +35,7 @@ data class DeviceListBean(val records: List<Records> = listOf()) {
         var brandType: Int = 0,//品牌类型：1-merit,2-绝影
         var showMedal: Boolean = false,//显示勋章
         var featureDescription: List<FeatureDescription>? = listOf(),
+        var isBind: Int = 0,//是否绑定操作 1是0否
     ) : Parcelable {
         @Parcelize
         data class FeatureDescription(
