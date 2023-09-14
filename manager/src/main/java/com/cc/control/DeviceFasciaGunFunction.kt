@@ -30,7 +30,7 @@ class DeviceFasciaGunFunction(device: String) : BaseDeviceFunction(device) {
         }
     }
 
-    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean) {
+    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean,isSlope: Boolean) {
         deviceControl(writeFasciaGunControl(resistance), isDelayed)
     }
 

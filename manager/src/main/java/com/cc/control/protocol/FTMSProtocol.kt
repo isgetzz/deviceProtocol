@@ -97,13 +97,13 @@ fun onFTMSProtocol(
                 if (adr shr 4 and 1 == 1) { //踏数//1
                     count = (beaconParser.readShort() / 10) //总步幅 /10
                 }
-                if (adr shr 5 and 1 == 1) { //坡度//0
-                    gradient = beaconParser.readShort()
+                if (adr shr 5 and 1 == 1) { //海拔增益//0
+                    beaconParser.readShort()
+                    beaconParser.readShort()
                 }
-                if (adr shr 6 and 1 == 1) { //坡度设置 0
-                    beaconParser.readShort()
-                    beaconParser.readShort()
-                    beaconParser.readShort()
+                if (adr shr 6 and 1 == 1) { //坡度 0
+                    gradient = beaconParser.readShort()
+                    beaconParser.readShort()//斜面角度设置
                 }
                 if (adr shr 7 and 1 == 1) { //阻力
                     drag = beaconParser.readShort() / 10
@@ -199,9 +199,15 @@ fun writeFTMSClear(): ByteArray {
 }
 
 /**
- * 单车
- * 华为控制
+ * 华为阻力控制
  */
-fun writeBicycleControl(resistance: Int): ByteArray {
+fun writeResistanceControl(resistance: Int): ByteArray {
     return ByteUtils.stringToBytes(DeviceConvert.intArrToHexString(0x04, resistance))
+}
+
+/**
+ * 华为坡度控制
+ */
+fun writeSlopeControl(resistance: Int): ByteArray {
+    return ByteUtils.stringToBytes(DeviceConvert.intArrToHexString(0x03, resistance))
 }

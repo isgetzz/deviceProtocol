@@ -95,7 +95,11 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
      * speed 速度 resistance 阻力 slope 坡度
      */
     abstract fun onControl(
-        speed: Int = 0, resistance: Int = 0, slope: Int = 0, isDelayed: Boolean = false,
+        speed: Int = 0,
+        resistance: Int = 0,
+        slope: Int = 0,
+        isDelayed: Boolean = false,
+        isSlope: Boolean = false,
     )
 
     /**

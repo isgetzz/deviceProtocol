@@ -37,7 +37,7 @@ class DeviceSkippingFunction(device: String) : BaseDeviceFunction(device) {
         } else write(writeZJSkippingModel(model, targetNum), onSuccess)
     }
 
-    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean) {}
+    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean,isSlope: Boolean) {}
 
     override fun onBluetoothNotify(service: UUID, character: UUID, parser: BeaconParser) {
         val adr = parser.readByte()
