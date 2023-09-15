@@ -102,7 +102,7 @@ fun onFTMSProtocol(
                     beaconParser.readShort()
                 }
                 if (adr shr 6 and 1 == 1) { //坡度 0
-                    gradient = beaconParser.readShort()
+                    gradient = beaconParser.readShort() / 10
                     beaconParser.readShort()//斜面角度设置
                 }
                 if (adr shr 7 and 1 == 1) { //阻力
