@@ -30,7 +30,6 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
     companion object {
         const val TAG = "BaseDeviceFunction"
     }
-
     /**
      * 获取数据、状态array
      */
