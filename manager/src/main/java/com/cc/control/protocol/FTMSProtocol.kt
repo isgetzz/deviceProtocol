@@ -1,6 +1,7 @@
 package com.cc.control.protocol
 
 import com.cc.control.bean.DeviceTrainBO
+import com.cc.control.protocol.DeviceConvert.intTo2HexString
 import com.inuker.bluetooth.library.beacon.BeaconParser
 import com.inuker.bluetooth.library.utils.ByteUtils
 import kotlin.math.max
@@ -102,7 +103,7 @@ fun onFTMSProtocol(
                     beaconParser.readShort()
                 }
                 if (adr shr 6 and 1 == 1) { //坡度 0
-                    gradient = beaconParser.readShort()
+                    gradient = beaconParser.readShort() / 10
                     beaconParser.readShort()//斜面角度设置
                 }
                 if (adr shr 7 and 1 == 1) { //阻力
@@ -209,5 +210,6 @@ fun writeResistanceControl(resistance: Int): ByteArray {
  * 华为坡度控制
  */
 fun writeSlopeControl(resistance: Int): ByteArray {
-    return ByteUtils.stringToBytes(DeviceConvert.intArrToHexString(0x03, resistance))
+    return ByteUtils.stringToBytes(DeviceConvert.intArrToHexString(0x03)
+            + intTo2HexString(resistance))
 }

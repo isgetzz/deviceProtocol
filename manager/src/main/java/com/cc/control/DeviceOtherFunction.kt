@@ -12,7 +12,7 @@ class DeviceOtherFunction : BaseDeviceFunction() {
     override fun startWrite(isCreate: Boolean) {
     }
 
-    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean, isSlope: Boolean) {
+    override fun onControl(speed: Int, resistance: Int, slope: Int, isDelayed: Boolean,isSlope: Boolean) {
 
     }
 

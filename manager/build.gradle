@@ -48,4 +48,16 @@ dependencies {
     embed(name: 'ICDeviceManager', ext: 'aar')
 //    api files('libs/ppscale.aar')
     embed(name: 'ppscale', ext: 'aar')
+//    api files('libs/ppscale.aar')
+//    api files('libs/ICDeviceManager.aar')
+
+//    作为模块依赖库避免冲突
+//    compileOnly 'androidx.lifecycle:lifecycle-livedata-core-ktx:2.4.0'
+//    compileOnly 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
+//    compileOnly 'com.alibaba:fastjson:1.2.83'
+//    api 'com.inuker.bluetooth:library:1.4.0'
+//    implementation 'no.nordicsemi.android:dfu:1.10.3'//DFU升级库两个都要
+//    implementation 'no.nordicsemi.android:ble-common:2.2.0'
+//    implementation 'androidx.lifecycle:lifecycle-common:2.5.1'
+//    compileOnly 'androidx.lifecycle:lifecycle-common-java8:2.5.1'
 }

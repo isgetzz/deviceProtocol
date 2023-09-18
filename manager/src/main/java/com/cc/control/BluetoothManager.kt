@@ -427,4 +427,5 @@ object BluetoothManager {
     fun saveConnectMap(bean: DevicePropertyBean) {
         deviceConnectMap[bean.type] = bean
     }
+
 }

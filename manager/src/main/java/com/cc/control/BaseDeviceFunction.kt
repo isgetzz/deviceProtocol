@@ -30,7 +30,6 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
     companion object {
         const val TAG = "BaseDeviceFunction"
     }
-
     /**
      * 获取数据、状态array
      */
@@ -100,7 +99,7 @@ abstract class BaseDeviceFunction(private var mDeviceType: String = "") : Defaul
         slope: Int = 0,
         isDelayed: Boolean = false,
         isSlope: Boolean = false,
-        )
+    )
 
     /**
      * 跑步机 暂停、继续、开始
