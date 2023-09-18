@@ -32,7 +32,6 @@ data class DeviceListBean(val records: List<Records> = listOf()) {
         var versionEigenValue: Int = 0,// 1：2a26 ,2:2a28
         var isMerit: Int = 0, // 1是0否
         var otaProtocol: Int = 0,//ota协议
-        var brandType: Int = 0,//品牌类型：1-merit,2-绝影
         var showMedal: Boolean = false,//显示勋章
         var brandType: Int = 0,//品牌类型：1-merit,2-绝影
         var featureDescription: List<FeatureDescription>? = listOf(),
