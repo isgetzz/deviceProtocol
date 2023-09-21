@@ -1,5 +1,4 @@
 <resources>
-    <string name="app_name">MERIT超燃脂</string>
     <string name="btn_scan">AddDevice</string>
     <string name="btn_remove">DeleteDevice</string>
     <string name="btn_unit">Unit</string>

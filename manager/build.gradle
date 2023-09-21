@@ -5,7 +5,9 @@ plugins {
     id 'com.github.dcendents.android-maven'
     id 'com.kezong.fat-aar'
 }
+//apply from: "${rootDir.getAbsolutePath()}/publishmaven.gradle"
 group = 'com.github.cc000000'
+version '1.0'
 android {
     compileSdkVersion 33
     buildToolsVersion "30.0.3"
@@ -24,15 +26,17 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
+
     }
-    repositories {
-        flatDir {
-            dirs 'libs'
-        }
+
+}
+repositories {
+    flatDir {
+        dirs 'libs'
     }
-    fataar {
-        transitive = true
-    }
+}
+fataar {
+    transitive = true
 }
 dependencies {
     compileOnly 'com.alibaba:fastjson:1.2.83'
@@ -45,10 +49,10 @@ dependencies {
     implementation 'no.nordicsemi.android:dfu:1.10.3'//DFU升级库两个都要
     implementation 'no.nordicsemi.android:ble-common:2.2.0'
     compileOnly 'androidx.lifecycle:lifecycle-common-java8:2.2.0'
-//    embed(name: 'ICDeviceManager', ext: 'aar')
-//    embed(name: 'ppscale', ext: 'aar')
-    api files('libs/ppscale.aar')
-    api files('libs/ICDeviceManager.aar')
+    embed(name: 'ICDeviceManager', ext: 'aar')
+    embed(name: 'ppscale', ext: 'aar')
+//    embed files('libs/ppscale.aar')
+//    embed files('libs/ICDeviceManager.aar')
 
 //    作为模块依赖库避免冲突
 //    compileOnly 'androidx.lifecycle:lifecycle-livedata-core-ktx:2.4.0'
