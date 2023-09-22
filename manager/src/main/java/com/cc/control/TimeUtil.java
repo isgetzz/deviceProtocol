@@ -1,7 +1,5 @@
 package com.cc.control;
 
-import android.text.TextUtils;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -32,22 +30,6 @@ public class TimeUtil {
     public static final SimpleDateFormat INT_YEAR_MONTH_FORMAT = new SimpleDateFormat("yyyy年MM月", Locale.CHINESE);
     public static final Date todayDate = new Date();
 
-
-    /**
-     * long time to int
-     *
-     * @param timeInMillis
-     * @param dateFormat
-     * @return
-     */
-    public static int getCurrentHourInInt(long timeInMillis, SimpleDateFormat dateFormat) {
-        String date = dateFormat.format(new Date(timeInMillis));
-        int time = 0;
-        if (!TextUtils.isEmpty(date)) {
-            time = Integer.parseInt(date);
-        }
-        return time;
-    }
 
     /**
      * 毫秒 转 日期
@@ -202,21 +184,6 @@ public class TimeUtil {
         return DAY.format(date);
     }
 
-    /**
-     * long time to int
-     *
-     * @param timeInMillis
-     * @param dateFormat
-     * @return
-     */
-    public static long getCurrentDateInLong(long timeInMillis, SimpleDateFormat dateFormat) {
-        String date = dateFormat.format(new Date(timeInMillis));
-        long time = 0;
-        if (!TextUtils.isEmpty(date)) {
-            time = Long.parseLong(date);
-        }
-        return time;
-    }
 
     /**
      * long time to int
@@ -260,25 +227,10 @@ public class TimeUtil {
         return getTime(timeInMillis, DEFAULT_DATE_FORMAT);
     }
 
-    public static Calendar getCalendar(String time) {
-        Calendar calendar = Calendar.getInstance();
-        if (TextUtils.isEmpty(time) || time.equals("0")) {
-            calendar.set(0, 0, 0, 0, 0, 0);
-            return calendar;
-        }
-        try {
-            Date date1 = DEFAULT_DATE_FORMAT.parse(time);
-            if (date1 != null)
-                calendar.setTime(date1);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        return calendar;
-    }
 
     public static Calendar getYYMMDD(String time) {
         Calendar calendar = Calendar.getInstance();
-        if (TextUtils.isEmpty(time) || time.equals("0")) {
+        if (time.isEmpty() || time.equals("0")) {
             calendar.set(0, 0, 0, 0, 0, 0);
             return calendar;
         }
@@ -293,13 +245,6 @@ public class TimeUtil {
         return calendar;
     }
 
-    public static int getSeconds(String time) {
-        if (time.equals("0")) {
-            return 0;
-        }
-        Calendar calendar = getCalendar(time);
-        return calendar.get(Calendar.SECOND) + calendar.get(Calendar.MINUTE) * 60 + calendar.get(Calendar.HOUR) * 3600;
-    }
 
     public static String getHourTime(String date) {
         return getTime(stringToDate(date).getTime(), INT_HOUR_FORMAT);
@@ -387,8 +332,7 @@ public class TimeUtil {
     //时间转化成时分秒 00:00:00
 
     public static String secondToHMS(long time) {
-        if (time == 0)
-            return "00:00:00";
+        if (time == 0) return "00:00:00";
         long hours = time / 3600;
         long minute = (time - hours * 3600) / 60;
         long second = time % 60;
@@ -399,8 +343,7 @@ public class TimeUtil {
     }
 
     public static String secondToMS(long time) {
-        if (time <= 0)
-            return "00:00";
+        if (time <= 0) return "00:00";
         long minute = time / 60;
         long second = time % 60;
         String min = minute < 10 ? "0" + minute : minute + "";
@@ -413,8 +356,7 @@ public class TimeUtil {
      * @return 20min29s
      */
     public static String second2MS_format(long time) {
-        if (time <= 0)
-            return "0min0s";
+        if (time <= 0) return "0min0s";
         long minute = time / 60;
         long second = time % 60;
         return minute + "min" + second + "s";
@@ -439,8 +381,7 @@ public class TimeUtil {
      * @return 20'29''
      */
     public static String second2MS_format2(long time) {
-        if (time <= 0)
-            return "0'0''";
+        if (time <= 0) return "0'0''";
         long minute = time / 60;
         long second = time % 60;
         return minute + "'" + second + "''";
@@ -457,8 +398,7 @@ public class TimeUtil {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         int w = cal.get(Calendar.DAY_OF_WEEK) - 1;
-        if (w < 0)
-            w = 0;
+        if (w < 0) w = 0;
         return weekDays[w];
     }
 
