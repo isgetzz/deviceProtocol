@@ -12,6 +12,7 @@ import cn.icomon.icdevicemanager.model.device.ICUserInfo
 import cn.icomon.icdevicemanager.model.other.ICConstant
 import cn.icomon.icdevicemanager.model.other.ICDeviceManagerConfig
 import com.cc.control.LiveDataBus.CONNECT_BEAN_KEY
+import com.cc.control.TimeUtil.BirthdayToAge
 import com.cc.control.bean.DeviceConnectBean
 import com.cc.control.bean.DevicePropertyBean
 import com.cc.control.bean.ScaleUserBean
@@ -23,7 +24,6 @@ import com.peng.ppscale.business.device.PPUnitType
 import com.peng.ppscale.business.state.PPBleSwitchState
 import com.peng.ppscale.business.state.PPBleWorkState
 import com.peng.ppscale.data.PPBodyDetailModel
-import com.peng.ppscale.util.Logger
 import com.peng.ppscale.util.PPUtil
 import com.peng.ppscale.vo.*
 
@@ -48,19 +48,17 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
 
     //乐福体脂秤
     private val ppScale by lazy {
-        PPScale.Builder(BluetoothManager.mApplication)
-            .setProtocalFilterImpl(getProtocolFilter())
-            .setBleOptions(BleConfigOptions.lfOptions)
-            .setBleStateInterface(bleStateInterface)
-            .build()
+        PPScale.Builder(BluetoothManager.mApplication).setProtocalFilterImpl(getProtocolFilter())
+            .setBleOptions(BleConfigOptions.lfOptions).setBleStateInterface(bleStateInterface)
+            .setUserModel(PPUserModel.Builder().setAge(18).setHeight(180)
+                .setSex(PPUserGender.PPUserGenderMale).setGroupNum(0).build()).build()
     }
 
     /**
      * 只会初始化一次SDK 每次使用前会判断是否有权限
      */
     private fun createScale() {
-        if (initScaleSDK)
-            return
+        if (initScaleSDK) return
         val config = ICDeviceManagerConfig()
         config.context = BluetoothManager.mApplication
         ICDeviceManager.shared().delegate = this
@@ -84,7 +82,8 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                 onScanResultWL = scanResultWL
                 onScanResultLF = scanResultLF
                 updateUserInfo(scaleUserBean)
-                ppScale.monitorSurroundDevice(10000)
+                ppScale.builder.setDeviceList(null)
+                ppScale.monitorSurroundDevice(30000)
                 ICDeviceManager.shared().scanDevice(this)
             }
             DeviceConstants.D_SERVICE_SCALE_WL -> {
@@ -96,7 +95,8 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
             DeviceConstants.D_SERVICE_SCALE_LF -> {
                 onScanResultLF = scanResultLF
                 updateUserInfo(scaleUserBean)
-                ppScale.monitorSurroundDevice(10000)
+                ppScale.builder.setDeviceList(null)
+                ppScale.monitorSurroundDevice(30000)
             }
 
         }
@@ -111,18 +111,23 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     fun connectDevice(
         mac: String,
         deviceName: String,
+        protocol: Int,
         scaleUserBean: ScaleUserBean? = null,
     ) {
-        createScale()
-        val device = ICDevice()
-        device.macAddr = mac
-        ICDeviceManager.shared().addDevice(device) { icDevice, status ->
-            writeToFile(TAG, "onConnectDevice:$deviceName $icDevice 状态: $status")
+        if (protocol == 0 || protocol == DeviceConstants.D_SERVICE_SCALE_WL) {
+            createScale()
+            val device = ICDevice()
+            device.macAddr = mac
+            ICDeviceManager.shared().addDevice(device) { icDevice, status ->
+                writeToFile(TAG, "onConnectDevice:$deviceName $icDevice 状态: $status")
+            }
         }
-        ppScale.builder.setDeviceList(listOf(mac))
-        updateUserInfo(scaleUserBean)
-        //启动扫描
-        ppScale.startSearchBluetoothScaleWithMacAddressList()
+        if (protocol == 0 || protocol == DeviceConstants.D_SERVICE_SCALE_LF) {
+            ppScale.builder.setDeviceList(listOf(mac))
+            updateUserInfo(scaleUserBean)
+            //启动扫描
+            ppScale.startSearchBluetoothScaleWithMacAddressList()
+        }
     }
 
     /**
@@ -183,7 +188,6 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
 
                 override fun monitorLockDataByCalculateInScale(fatModel: PPBodyFatModel) {
                     super.monitorLockDataByCalculateInScale(fatModel)
-                    fatModel.ppBodyBaseModel
                     Log.d(TAG, "monitorLockDataByCalculateInScale: $fatModel")
                 }
 
@@ -198,18 +202,14 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
      * 乐福数据稳定 LF
      */
     private fun onDataLock(bodyBaseModel: PPBodyBaseModel?, deviceModel: PPDeviceModel) {
-        if (bodyBaseModel != null) {
-            if (!bodyBaseModel.isHeartRating) {
-                ppScale?.stopSearch()
-                val weightStr = PPUtil.getWeight(bodyBaseModel.unit,
-                    bodyBaseModel.getPpWeightKg().toDouble(),
-                    deviceModel.deviceAccuracyType.getType())
-                Log.d(TAG, "onDataLock1$bodyBaseModel")
-                Log.d(TAG, "onDataLock2 $onMeasureResultLF $weightStr")
-                onMeasureResultLF?.invoke(bodyBaseModel, true)
-            } else {
-                Logger.d("正在测量心率")
-            }
+        if (bodyBaseModel != null && !bodyBaseModel.isHeartRating) {
+            ppScale?.stopSearch()
+            val weightStr = PPUtil.getWeight(bodyBaseModel.unit,
+                bodyBaseModel.getPpWeightKg().toDouble(),
+                deviceModel.deviceAccuracyType.getType())
+            Log.d(TAG, "onDataLock1$bodyBaseModel")
+            Log.d(TAG, "onDataLock2 $onMeasureResultLF $weightStr")
+            onMeasureResultLF?.invoke(bodyBaseModel, true)
         }
     }
 
@@ -258,6 +258,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
      */
     private fun updateUserInfo(scaleUserBean: ScaleUserBean? = null) {
         scaleUserBean?.run {
+            val age = BirthdayToAge(scaleUserBean.birthday)
             val userInfo = ICUserInfo()
             if (age > 0 && height.isNotEmpty() && id.isNotEmpty()) {
                 userInfo.age = age
@@ -267,7 +268,6 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                 userInfo.kitchenUnit = ICConstant.ICKitchenScaleUnit.ICKitchenScaleUnitG
                 userInfo.rulerUnit = ICConstant.ICRulerUnit.ICRulerUnitInch
                 userInfo.peopleType = ICConstant.ICPeopleType.ICPeopleTypeNormal//用户类型
-                // userInfo.userIndex = userIndex
                 ICDeviceManager.shared().updateUserInfo(userInfo)
             }
             val userModel = PPUserModel.Builder().setAge(age).build()
@@ -288,7 +288,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         userInfo.kitchenUnit = ICConstant.ICKitchenScaleUnit.ICKitchenScaleUnitG
         userInfo.rulerUnit = ICConstant.ICRulerUnit.ICRulerUnitInch
         userInfo.peopleType = ICConstant.ICPeopleType.ICPeopleTypeNormal//用户类型
-        userInfo.age = scaleUserBean.age
+        userInfo.age = BirthdayToAge(scaleUserBean.birthday)
         userInfo.height = scaleUserBean.height.toFloat().toInt()
         userInfo.sex =
             if (scaleUserBean.sex == 1) ICConstant.ICSexType.ICSexTypeMale else ICConstant.ICSexType.ICSexTypeFemal
@@ -313,13 +313,15 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         bodyBaseModel.impedance = bodyModel.impedance
         bodyBaseModel.weight = getWeight(bodyModel.getPpWeightKg().toDouble())
         bodyBaseModel.deviceModel = deviceModel
-        val userModel = PPUserModel.Builder().setAge(scaleUserBean.age).build()
+        val userModel = PPUserModel.Builder().setAge(BirthdayToAge(scaleUserBean.birthday)).build()
         userModel.userHeight = scaleUserBean.height.toDouble().toInt()
         userModel.sex =
             if (scaleUserBean.sex == 1) PPUserGender.PPUserGenderMale else PPUserGender.PPUserGenderFemale
         bodyBaseModel.userModel = userModel
-        writeToFile(TAG, "resetScaleData  $userModel $scaleUserBean")
-        return PPBodyFatModel(bodyBaseModel)
+        val bodyFatModel = PPBodyFatModel(bodyBaseModel)
+        writeToFile(TAG,
+            "resetScaleData 完整：$bodyFatModel \n身体数据：$bodyModel \nlf用户信息：$userModel \n体脂秤用户信息：$scaleUserBean")
+        return bodyFatModel
     }
 
     /**
@@ -358,7 +360,10 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
     ) {
         val address = device.getMacAddr()
         val status = state == ICConstant.ICDeviceConnectState.ICDeviceConnectStateConnected
-        val bean = DevicePropertyBean(address, DeviceConstants.D_FAT_SCALE, isConnect = status)
+        val bean = DevicePropertyBean(address,
+            DeviceConstants.D_FAT_SCALE,
+            isConnect = status,
+            protocol = DeviceConstants.D_SERVICE_SCALE_WL)
         BluetoothManager.saveConnectMap(bean)
         LiveDataBus.postValue(CONNECT_BEAN_KEY,
             DeviceConnectBean(address, DeviceConstants.D_FAT_SCALE, isConnect = status))
@@ -388,8 +393,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                 return
             }
             ICDeviceManager.shared().settingManager.setRulerBodyPartsType(device,
-                ICConstant.ICRulerBodyPartsType.valueOf(data.getPartsType().value + 1)
-            ) { }
+                ICConstant.ICRulerBodyPartsType.valueOf(data.getPartsType().value + 1)) { }
         }
     }
 
@@ -456,11 +460,11 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
             deviceModel?.run {
                 val address = deviceModel.deviceMac
                 val status = ppBleWorkState == PPBleWorkState.PPBleWorkStateConnected
-                val bean =
-                    DevicePropertyBean(address,
-                        DeviceConstants.D_FAT_SCALE,
-                        deviceModel.deviceName,
-                        isConnect = status)
+                val bean = DevicePropertyBean(address,
+                    DeviceConstants.D_FAT_SCALE,
+                    deviceModel.deviceName,
+                    isConnect = status,
+                    protocol = DeviceConstants.D_SERVICE_SCALE_LF)
                 if (ppBleWorkState == PPBleWorkState.PPBleWorkStateConnected) {
                     BluetoothManager.saveConnectMap(bean)
                     LiveDataBus.postValue(CONNECT_BEAN_KEY,
@@ -471,6 +475,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
                     BluetoothManager.saveConnectMap(bean)
                     LiveDataBus.postValue(CONNECT_BEAN_KEY,
                         DeviceConnectBean(address, DeviceConstants.D_FAT_SCALE, isConnect = false))
+                    ppScale.connectDevice(deviceModel)
                 } else if (ppBleWorkState == PPBleWorkState.PPBleStateSearchCanceled) {
                     Log.d(TAG, "monitorBluetoothWorkState: PPBleStateSearchCanceled")
                 } else if (ppBleWorkState == PPBleWorkState.PPBleWorkSearchTimeOut) {
@@ -574,5 +579,4 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         icConfigWifiState: ICConstant.ICConfigWifiState,
     ) {
     }
-
 }
