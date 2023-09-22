@@ -7,7 +7,6 @@ plugins {
 }
 //apply from: "${rootDir.getAbsolutePath()}/publishmaven.gradle"
 group = 'com.github.cc000000'
-version '1.0'
 android {
     compileSdkVersion 33
     buildToolsVersion "30.0.3"
