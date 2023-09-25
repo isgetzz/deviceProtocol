@@ -11,9 +11,7 @@ import java.util.*
  *  :力量站
  */
 class DevicePowerFunction(device: String) : BaseDeviceFunction(device) {
-    /**
-     * 开始下发指令 isCreate 目前用于跑步机
-     */
+
     override fun startWrite(isCreate: Boolean) {
         notifyBean.status = DEVICE_TREADMILL_RUNNING
         if (dateArray.isEmpty()) {

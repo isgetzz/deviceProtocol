@@ -1,7 +1,7 @@
 package com.cc.control.protocol
 
 /**
- *协议相关
+ *cc 协议相关
  */
 object DeviceConstants {
     //MTU
