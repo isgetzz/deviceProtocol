@@ -94,6 +94,9 @@ fun getDeviceFunction(deviceType: String): BaseDeviceFunction {
         DeviceConstants.D_TREADMILL -> {
             DeviceTreadmillFunction(deviceType)
         }
+        DeviceConstants.D_POWER -> {
+            DevicePowerFunction(deviceType)
+        }
         else -> {
             DeviceOtherFunction()
         }

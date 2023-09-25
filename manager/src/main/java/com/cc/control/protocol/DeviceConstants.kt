@@ -15,6 +15,7 @@ object DeviceConstants {
     const val D_TECHNOGYM = "6" //椭圆机
     const val D_FASCIA_GUN = "9" //筋膜枪
     const val D_SKIPPING = "10" //跳绳
+    const val D_POWER = "11" //力量站
     const val D_HULA_HOOP = "21" //呼啦圈
     const val D_HEART = "100" //心率带
     const val D_FAT_SCALE = "41"//体脂秤
