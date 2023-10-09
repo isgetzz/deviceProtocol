@@ -114,6 +114,7 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         protocol: Int,
         scaleUserBean: ScaleUserBean? = null,
     ) {
+        updateUserInfo(scaleUserBean)
         if (protocol == 0 || protocol == DeviceConstants.D_SERVICE_SCALE_WL) {
             createScale()
             val device = ICDevice()
@@ -124,7 +125,6 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         }
         if (protocol == 0 || protocol == DeviceConstants.D_SERVICE_SCALE_LF) {
             ppScale.builder.setDeviceList(listOf(mac))
-            updateUserInfo(scaleUserBean)
             //启动扫描
             ppScale.startSearchBluetoothScaleWithMacAddressList()
         }
