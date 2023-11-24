@@ -63,6 +63,14 @@ class DeviceScaleFunction : ICDeviceManagerDelegate, ICScanDeviceDelegate {
         config.context = BluetoothManager.mApplication
         ICDeviceManager.shared().delegate = this
         ICDeviceManager.shared().initMgrWithConfig(config)
+
+    }
+
+    /***
+     *获取体脂秤日志
+     */
+    fun getScaleLogPath() {
+        ICDeviceManager.shared().logPath
     }
 
     /**

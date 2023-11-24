@@ -2,9 +2,12 @@ package com.cc.control.ota
 
 import com.cc.control.bean.UnitEnum
 import com.cc.control.logD
-import com.cc.control.protocol.*
+import com.cc.control.protocol.DeviceByteParser
 import com.cc.control.protocol.DeviceConvert.intTo4HexString
 import com.cc.control.protocol.DeviceConvert.stringToBytes
+import com.cc.control.protocol.dvSplitByteArr
+import com.cc.control.protocol.dvToByteArray
+import com.cc.control.protocol.otaCrc
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.math.floor

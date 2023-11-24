@@ -250,7 +250,7 @@ object BluetoothManager {
                 DeviceConstants.D_OTA_LSW -> {
                     otaService = string2UUID(DeviceConstants.D_SERVICE_OTA_LSW)
                     otaWrite = string2UUID(DeviceConstants.D_CHARACTER_OTA_LSW)
-                    otaControl = string2UUID(DeviceConstants.D_CONTROL_OTA_LSW)
+                      otaControl = string2UUID(DeviceConstants.D_CONTROL_OTA_LSW)
                     otaNotify = string2UUID(DeviceConstants.D_CONTROL_OTA_LSW)
                 }
             }
